@@ -60,7 +60,7 @@ print("\nAllocated Nodes:")
 for i, node in enumerate(nodes, start=1):
     print(f"Node {i}: {node}")
 
-# Example role assignment
+# Assigned the node 
 if len(nodes) >= 2:
     tx_node = nodes[0]
     rx_node = nodes[1]
