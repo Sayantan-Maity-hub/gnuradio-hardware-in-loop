@@ -11,7 +11,6 @@ def run_command(cmd):
     )
 
     return result.stdout
-
 # Submit OAR job
 submit_output = run_command(
     'oarsub -l nodes=2,walltime=0:05:00 "sleep 300"'
@@ -19,7 +18,6 @@ submit_output = run_command(
 
 print("Submission Output:")
 print(submit_output)
-
 # Extract job ID
 job_match = re.search(r"OAR_JOB_ID=(\d+)", submit_output)
 
@@ -30,7 +28,6 @@ if not job_match:
 job_id = job_match.group(1)
 
 print(f"\nJob ID: {job_id}")
-
 # Wait for scheduling
 time.sleep(5)
 
