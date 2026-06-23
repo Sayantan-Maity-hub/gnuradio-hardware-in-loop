@@ -11,4 +11,6 @@ def main():
     print(job_id)
     print(nodes)
 
-    
+    for node in nodes:
+        print(node)
+
