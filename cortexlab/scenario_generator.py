@@ -26,4 +26,15 @@ def generate_scenario(nodes):
             *scenario_nodes
         ])
 
-        )
+        with open(
+            "controller/scenario.yaml",
+            "w"
+        ) as f:
+            f.write(content)
+
+def submit_task():
+    subprocess.run(
+        "minus task submit controller.task",
+        shell=True,
+        check=True
+    )
