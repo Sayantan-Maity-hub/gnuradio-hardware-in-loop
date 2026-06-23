@@ -3,9 +3,6 @@ def hostname_to_scenario_name(host):
     short=host.split(".")[0]
     return short.replace("mnode", "node")
 
-def create_task():
-    subprocess.run("minus task create", shell=True, check=True)
-
 def generate_scenario(nodes):
     scenario_nodes = []
     for host in nodes:
@@ -31,6 +28,9 @@ def generate_scenario(nodes):
             "w"
         ) as f:
             f.write(content)
+            
+def create_task():
+    subprocess.run("minus task create", shell=True, check=True)
 
 def submit_task():
     subprocess.run(

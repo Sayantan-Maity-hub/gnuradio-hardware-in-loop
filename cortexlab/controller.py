@@ -14,3 +14,13 @@ def main():
     for node in nodes:
         print(node)
 
+    #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
+    generate_scenario(nodes)
+
+    #Create a task using minus task create command.
+    create_task()
+
+    #Submit the task using minus task submit command.
+    submit_task()
+    
+
