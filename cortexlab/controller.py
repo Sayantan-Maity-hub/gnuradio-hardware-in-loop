@@ -22,5 +22,10 @@ def main():
 
     #Submit the task using minus task submit command.
     submit_task()
+
+    #Monitoring the nodes using monitor.py to check if they are online or offline.
+    monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 30), daemon=True) #threading to monitor the nodes in the background.
+    monitor_thread.start()
+    print("monitoring nodes started in the background.")
     
 
