@@ -3,7 +3,7 @@ def hostname_to_scenario_name(host):
     short=host.split(".")[0]
     return short.replace("mnode", "node")
 
-def generate_scenario(nodes):
+def generate_scenario(nodes, walltime):
     scenario_nodes = []
     for host in nodes:
         scenario_name=(hostname_to_scenario_name(host))
@@ -17,7 +17,7 @@ def generate_scenario(nodes):
         ])
         content="\n".join([
             "description: Conroller and runner Communication Test",
-            "duration: 1200",
+            f"duration: {walltime}",
             "",
             "nodes:",
             *scenario_nodes
@@ -28,7 +28,7 @@ def generate_scenario(nodes):
             "w"
         ) as f:
             f.write(content)
-            
+
 def create_task():
     subprocess.run("minus task create", shell=True, check=True)
 

@@ -162,4 +162,8 @@ def reserve_nodes():
     for node in nodes:
         print(node)
 
-    return job_id, nodes
+def walltime_to_seconds(walltime):
+    h, m, s = map(int, walltime.split(":"))
+    return h*3600 + m*60 + s
+
+    return job_id, nodes, walltime_to_seconds(walltime)
