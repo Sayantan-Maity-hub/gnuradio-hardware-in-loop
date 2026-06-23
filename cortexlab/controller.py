@@ -2,6 +2,7 @@ import threading
 from reservation import reserve_nodes
 from scenario_generator import (create_task, generate_scenario, submit_task)
 from monitor import monitor_nodes
+from registry import get_nodes
 
 def main():
     print("\n Welcome to the cortexlab controller script")
@@ -28,4 +29,14 @@ def main():
     monitor_thread.start()
     print("monitoring nodes started in the background.")
     
+    #Keep main thread alive to keep the program running and monitoring the nodes.
+    while True:
+        print("\n======= REGISTRY =======")
+        print(get_nodes())
+        input ("\nPress Enter to refresh the registry)")
+
+    if __name__ == "__main__":
+        main()
+
+
 
