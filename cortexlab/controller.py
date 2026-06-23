@@ -12,3 +12,6 @@ def get_node_info(hostname, username="root", port=2222):
         username=username,
         port=port
     )
+    stdin, stdout, stderr = ssh.exec_command("hostname")
+
+    node_hostname = stdout.read().decode().strip()
