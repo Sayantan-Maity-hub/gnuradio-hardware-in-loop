@@ -1,36 +1,36 @@
 import subprocess
+import yaml
 def hostname_to_scenario_name(host):
     short=host.split(".")[0]
     return short.replace("mnode", "node")
 
 def generate_scenario(nodes, walltime):
+    scenario = {
+        "description": "Controller Test",
+        "duration": {walltime},
+        "nodes": {}
+
+    }
+    
     scenario_nodes = []
     for host in nodes:
-        scenario_name=(hostname_to_scenario_name(host))
+        node_name=(hostname_to_scenario_name(host))
 
-        scenario_nodes.extend([
-            f"{scenario_name}:",
-            "  container:",
-            "    -image: ghcr.io/cortex-lab/cxlb-gnuraio-3.10:1.5",
-            "     command: /usr/sbin/sshd -p 2222 -D",
+        scenario["nodes"][node_name] = {
+            "container": [
+                {
+                    "image": "ghcr.io/cortexlab/cxlb-gnuradio-3.10:1.5",
+                    "command": "/usr/sbin/sshd -p 2222 -D"
+                }
 
-        ])
-        content="\n".join([
-            "description: Conroller and runner Communication Test",
-            f"duration: {walltime}",
-            "",
-            "nodes:",
-            *scenario_nodes
-        ])
+            ]
+        }
 
-        with open(
-            "controller/scenario.yaml",
-            "w"
-        ) as f:
-            f.write(content)
+        with open("controller/scenario.yaml","w") as f:
+            yaml.dump(scenario, f, sort_key=False)
 
 def create_task():
-    subprocess.run("minus task create", shell=True, check=True)
+    subprocess.run("minus task create controller", shell=True, check=True)
 
 def submit_task():
     subprocess.run(
