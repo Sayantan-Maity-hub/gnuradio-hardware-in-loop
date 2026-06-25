@@ -7,7 +7,7 @@ def hostname_to_scenario_name(host):
 def generate_scenario(nodes, walltime):
     scenario = {
         "description": "Controller Test",
-        "duration": {walltime},
+        "duration": walltime,
         "nodes": {}
 
     }
@@ -26,15 +26,33 @@ def generate_scenario(nodes, walltime):
             ]
         }
 
-        with open("controller/scenario.yaml","w") as f:
-            yaml.dump(scenario, f, sort_key=False)
+        with open("cortexlab/scenario/scenario.yaml","w") as f:
+            yaml.dump(scenario, f, sort_keys=False)
 
 def create_task():
-    subprocess.run("minus task create controller", shell=True, check=True)
+    subprocess.run("minus task create cortexlab/scenario", shell=True, check=True)
 
 def submit_task():
     subprocess.run(
-        "minus task submit controller.task",
+        "minus task submit cortexlab/scenario.task",
         shell=True,
         check=True
     )
+
+# ===================================== TEST===========================================
+
+def test_scenario_generation():
+    nodes = ["mnode14.cortexlab.fr", "mnode21.cortexlab.fr"]
+
+    generate_scenario(nodes, 600)
+
+    with open("cortexlab/scenario/scenario.yaml") as f:
+        data = yaml.safe_load(f)
+    assert data["description"] == "Controller Test"
+    assert len(data["nodes"]) == 2
+
+if __name__ == "__main__":
+    test_scenario_generation()
+
+    print("Test passed !")
+

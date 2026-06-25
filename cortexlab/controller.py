@@ -3,12 +3,13 @@ from reservation import reserve_nodes
 from scenario_generator import (create_task, generate_scenario, submit_task)
 from monitor import monitor_nodes
 from registry import get_nodes
+from flask_server import start_flask
 
 def main():
     print("\n Welcome to the cortexlab controller script")
 
     #Reserve nodes via OAR resevation.py used here.
-    job_id, nodes = reserve_nodes()
+    job_id, nodes, walltime = reserve_nodes()
     print(job_id)
     print(nodes)
 
@@ -16,7 +17,7 @@ def main():
         print(node)
 
     #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
-    generate_scenario(nodes)
+    generate_scenario(nodes, walltime)
 
     #Create a task using minus task create command.
     create_task()
@@ -29,14 +30,13 @@ def main():
     monitor_thread.start()
     print("monitoring nodes started in the background.")
     
-    #Keep main thread alive to keep the program running and monitoring the nodes.
-    while True:
-        print("\n======= REGISTRY =======")
-        print(get_nodes())
-        input ("\nPress Enter to refresh the registry)")
+    flask_thread = threading.Thread(target = start_flask, daemon=True)
+    flask_thread.start()
+    print("Flask API available at: ")
+    print("https://localhost:5678/status/nodes")
 
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()
 
 
 
