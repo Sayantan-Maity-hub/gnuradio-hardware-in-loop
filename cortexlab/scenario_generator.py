@@ -26,8 +26,8 @@ def generate_scenario(nodes, walltime):
             ]
         }
 
-        with open("cortexlab/scenario/scenario.yaml","w") as f:
-            yaml.dump(scenario, f, sort_keys=False)
+    with open("cortexlab/scenario/scenario.yaml","w") as f:
+        yaml.dump(scenario, f, sort_keys=False)
 
 def create_task():
     subprocess.run("minus task create cortexlab/scenario", shell=True, check=True)
@@ -50,9 +50,4 @@ def test_scenario_generation():
         data = yaml.safe_load(f)
     assert data["description"] == "Controller Test"
     assert len(data["nodes"]) == 2
-
-if __name__ == "__main__":
-    test_scenario_generation()
-
-    print("Test passed !")
 

@@ -1,3 +1,4 @@
 paramiko
 flask
 pyyaml
+pytest

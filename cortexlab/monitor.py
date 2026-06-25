@@ -1,12 +1,12 @@
 import time
 from registry import update_node
-from ssh_client import get_node_info
+from ssh_client import SSHConnection
 
 def monitor_nodes(nodes, interval=30):
     connections = {}
     for node in nodes:
         try:
-            ssh = get_node_info(node)
+            ssh = SSHConnection(node)
             connections[node] = ssh
             print(f"[CONNECTED] {node}")
         except Exception as e:
