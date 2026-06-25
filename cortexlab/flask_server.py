@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from registry import get_nodes
+from registry import get_nodes, update_node
 
 app = Flask(__name__)
 
@@ -13,7 +13,7 @@ def start_flask():
 # ======================TEST======================
 
 def test_flask_server():
-    get_nodes(
+    update_node(
         "mnode14",
         {
             "hostname": "mnode14",
