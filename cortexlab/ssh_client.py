@@ -8,19 +8,19 @@ class SSHConnection:
         self.ssh.connect(hostname=self.host, username="root", port=2222, timeout=10)
 
 
-def get_node_info(self):
+    def get_node_info(self):
     
-    stdin, stdout, stderr =self.exec_command("hostname")
-    hostname = stdout.read().decode().strip()
+        stdin, stdout, stderr =self.exec_command("hostname")
+        hostname = stdout.read().decode().strip()
 
-    _, stdout, _ = self.exec_command("cat /etc/os-release")
-    os_info = stdout.read().decode()
+        _, stdout, _ = self.exec_command("cat /etc/os-release")
+        os_info = stdout.read().decode()
 
-    return {
-        "status": "ONLINE",
-        "hostname": hostname,
-        "os": os_info
-    }
-def close(self):
-    self.ssh.close()
+        return {
+            "status": "ONLINE",
+            "hostname": hostname,
+            "os": os_info
+        }
+    def close(self):
+        self.ssh.close()
     

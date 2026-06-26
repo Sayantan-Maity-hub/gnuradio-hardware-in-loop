@@ -29,7 +29,7 @@ def generate_scenario(nodes, walltime):
         yaml.dump(scenario, f, sort_keys=False)
 
 def create_task(remote):
-    output = remote.run("minus task create scenario")
+    output = remote.run("minus task create -f scenario")
     print (output)
 
 def submit_task(remote):

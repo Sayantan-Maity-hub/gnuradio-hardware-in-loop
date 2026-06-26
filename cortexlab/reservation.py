@@ -1,5 +1,6 @@
 import re
 import time
+
 def walltime_to_seconds(walltime):
     h, m, s = map(int, walltime.split(":"))
     return h*3600 + m*60 + s

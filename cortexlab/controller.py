@@ -1,3 +1,4 @@
+import time
 import threading
 from reservation import reserve_nodes
 from scenario_generator import (create_task, generate_scenario, submit_task)
@@ -8,8 +9,9 @@ from cortexlab_remote import cortexlab_Remote
 
 def main():
     print("\n Welcome to the cortexlab controller script")
-
+    
     remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity")
+    """
     #Remotely Reserve nodes via OAR resevation.py used here.
     job_id, nodes, walltime = reserve_nodes(remote)
     print(job_id)
@@ -20,9 +22,11 @@ def main():
 
     #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
     generate_scenario(nodes, walltime)
-    remote.upload_folder("senario", "scenario")
+    
+    remote.upload_folder("scenario", "scenario")
 
-
+    """
+    nodes = ['mnode14.cortexlab.fr', 'mnode21.cortexlab.fr']
     #Remotely Create a task using minus task create command.
     create_task(remote)
 
@@ -36,8 +40,14 @@ def main():
     
     flask_thread = threading.Thread(target = start_flask, daemon=True)
     flask_thread.start()
-    print("Flask API available at: ")
-    print("https://localhost:5678/status/nodes")
+    print("Flask API available at:")
+    print("http://localhost:5678/status/nodes")
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Controller stopped.")
 
 if __name__ == "__main__":
     main()

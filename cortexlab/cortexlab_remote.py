@@ -6,7 +6,7 @@ class cortexlab_Remote:
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(hostname=hostname, username=username)
 
-        def run(self, command):
+    def run(self, command):
             stdin, stdout, stderr = self.ssh.exec_command(command)
             output = stdout.read().decode()
             error = stderr.read().decode()
@@ -16,7 +16,7 @@ class cortexlab_Remote:
             
             return output
         
-        def upload_folder(self, local_folder, remote_folder):
+    def upload_folder(self, local_folder, remote_folder):
             sftp = self.ssh.open_sftp()
             try:
                 sftp.mkdir(remote_folder)
@@ -25,5 +25,5 @@ class cortexlab_Remote:
             sftp.put(f"{local_folder}/scenario.yaml", f"{remote_folder}/scenario.yaml")
             sftp.close()
         
-        def colse(self):
+    def colse(self):
             self.ssh.cloase()
