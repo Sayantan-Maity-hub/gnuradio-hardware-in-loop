@@ -29,12 +29,12 @@ def generate_scenario(nodes, walltime):
         yaml.dump(scenario, f, sort_keys=False)
 
 def create_task(remote):
-    output = remote.run("minus task create cortexlab/scenario")
+    output = remote.run("minus task create scenario")
     print (output)
 
 def submit_task(remote):
     output = remote.run(
-        "minus task submit cortexlab/scenario.task")
+        "minus task submit scenario.task")
     print(output)
 
 # ===================================== TEST===========================================

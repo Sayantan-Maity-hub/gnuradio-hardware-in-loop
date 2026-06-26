@@ -4,7 +4,7 @@ class cortexlab_Remote:
     def __init__(self, hostname, username):
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect(hostname="gw.cortexlab.fr", username="sayantan_maity")
+        self.ssh.connect(hostname=hostname, username=username)
 
         def run(self, command):
             stdin, stdout, stderr = self.ssh.exec_command(command)

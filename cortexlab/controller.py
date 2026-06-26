@@ -4,12 +4,14 @@ from scenario_generator import (create_task, generate_scenario, submit_task)
 from monitor import monitor_nodes
 from registry import get_nodes
 from flask_server import start_flask
+from cortexlab_remote import cortexlab_Remote
 
 def main():
     print("\n Welcome to the cortexlab controller script")
 
-    #Reserve nodes via OAR resevation.py used here.
-    job_id, nodes, walltime = reserve_nodes()
+    remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity")
+    #Remotely Reserve nodes via OAR resevation.py used here.
+    job_id, nodes, walltime = reserve_nodes(remote)
     print(job_id)
     print(nodes)
 
@@ -18,12 +20,14 @@ def main():
 
     #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
     generate_scenario(nodes, walltime)
+    remote.upload_folder("senario", "scenario")
 
-    #Create a task using minus task create command.
-    create_task()
 
-    #Submit the task using minus task submit command.
-    submit_task()
+    #Remotely Create a task using minus task create command.
+    create_task(remote)
+
+    #Remotely Submit the task using minus task submit command.
+    submit_task(remote)
 
     #Monitoring the nodes using monitor.py to check if they are online or offline.
     monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 30), daemon=True) #threading to monitor the nodes in the background.
