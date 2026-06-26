@@ -1,4 +1,3 @@
-import subprocess
 import yaml
 def hostname_to_scenario_name(host):
     short=host.split(".")[0]
@@ -29,15 +28,14 @@ def generate_scenario(nodes, walltime):
     with open("cortexlab/scenario/scenario.yaml","w") as f:
         yaml.dump(scenario, f, sort_keys=False)
 
-def create_task():
-    subprocess.run("minus task create cortexlab/scenario", shell=True, check=True)
+def create_task(remote):
+    output = remote.run("minus task create cortexlab/scenario")
+    print (output)
 
-def submit_task():
-    subprocess.run(
-        "minus task submit cortexlab/scenario.task",
-        shell=True,
-        check=True
-    )
+def submit_task(remote):
+    output = remote.run(
+        "minus task submit cortexlab/scenario.task")
+    print(output)
 
 # ===================================== TEST===========================================
 
