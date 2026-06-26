@@ -26,13 +26,13 @@ def main():
     remote.upload_folder("scenario", "scenario")
 
     """
-    nodes = ['mnode14.cortexlab.fr', 'mnode21.cortexlab.fr']
+    nodes = ['mnode14', 'mnode21']
     #Remotely Create a task using minus task create command.
     create_task(remote)
 
     #Remotely Submit the task using minus task submit command.
     submit_task(remote)
-
+    
     #Monitoring the nodes using monitor.py to check if they are online or offline.
     monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 30), daemon=True) #threading to monitor the nodes in the background.
     monitor_thread.start()

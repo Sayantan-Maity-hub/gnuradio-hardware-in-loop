@@ -19,6 +19,8 @@ def monitor_nodes(nodes, interval=30):
                 update_node(node, info)
                 print(f"[ONLINE] {node}")
             except Exception as e:
-                update_node(node, {"status": "OFFLINE", "error": str(e)})
-                print(f"[OFFLINE] {node}")
+                update_node(node, 
+                            {"status": "OFFLINE", 
+                             "error": str(e)})
+                print(f"[OFFLINE] {node}: {e}")
         time.sleep(interval)
