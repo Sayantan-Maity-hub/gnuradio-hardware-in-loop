@@ -1,33 +1,53 @@
 import paramiko
+import shlex
 
 class SSHConnection:
     def __init__(self, host):
-        self.host=host.split(".")[0]
+        self.node_host=host.split(".")[0]
+        key = paramiko.Ed25519Key.from_private_key_file(r"C:\Users\maity\.ssh\id_ed25519")
         self.gateway = paramiko.SSHClient()
-        self.getway.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.getway.connect(hostname="gw.cortexlab.fr", username="sayantan_maity")
+        self.gateway.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.gateway.connect(hostname="gw.cortexlab.fr", username="sayantan_maity", pkey=key)
 
-        transport = self.gateway.get_transport()
-        channel = transport.open_channel("direct-tcpip", (self.node_host, 2222), ("127.0.0.1", 0))
-        
-        self.ssh = paramiko.SSHClient()
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect(hostname=self.node_host, username="root", port=2222, sock=channel)
+        self.key = key
 
+    def run_on_node(self, command):
+        full_cmd = (
+        "ssh "
+        "-o StrictHostKeyChecking=no "
+        "-o UserKnownHostsFile=/dev/null "
+        f"-p 2222 root@{self.node_host} "
+        f"{shlex.quote(command)}"
+        )
+        stdin, stdout, stderr = self.gateway.exec_command(full_cmd)
+
+        out = stdout.read().decode()
+        err = stderr.read().decode()
+
+        ignore_patterns = [
+        "Permanently added",
+        "Warning:",
+        "known hosts"
+        ]
+        clean_err = err.strip()
+
+            
+        if clean_err:
+            if not any(p in clean_err for p in ignore_patterns):
+
+                raise Exception(err)
+        return out
 
     def get_node_info(self):
-    
-        stdin, stdout, stderr =self.exec_command("hostname")
-        hostname = stdout.read().decode().strip()
 
-        _, stdout, _ = self.exec_command("cat /etc/os-release")
-        os_info = stdout.read().decode()
+        hostname = self.run_on_node("hostname")
+        os_info = self.run_on_node("cat /etc/os-release")
 
         return {
             "status": "ONLINE",
-            "hostname": hostname,
+            "hostname": hostname.strip(),
             "os": os_info
         }
     def close(self):
-        self.ssh.close()
+        self.gateway.close()
     

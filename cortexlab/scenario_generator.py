@@ -1,4 +1,5 @@
 import yaml
+import time
 def hostname_to_scenario_name(host):
     short=host.split(".")[0]
     return short.replace("mnode", "node")
@@ -35,5 +36,24 @@ def create_task(remote):
 def submit_task(remote):
     output = remote.run(
         "minus task submit scenario.task")
-    print(output)
+    print(f"taskId: {output}")
+    return output
+
+
+
+def wait_for_task_running(remote, task_id):
+    print(f"Waiting for task {task_id} to start...")
+
+    while True:
+        output = remote.run(f"minus task info {task_id}")
+
+        if "state=RUNNING" in output:
+            print("Task is RUNNING → nodes are ready")
+            return
+
+        if "state=ERROR" in output or "aborted=True" in output:
+            raise Exception("Task failed")
+
+        print("Still waiting...")
+        time.sleep(5)
 
