@@ -1,23 +1,14 @@
-import subprocess
 import re
 import time
+def walltime_to_seconds(walltime):
+    h, m, s = map(int, walltime.split(":"))
+    return h*3600 + m*60 + s
 
-def run_command(cmd):
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        text=True,
-        capture_output=True
-    )
-    if result.stderr:
-        print("STDERR:")
-        print(result.stderr)
-
-    return result.stdout
+    
 
 # Submit OAR job
 
-def reserve_nodes():
+def reserve_nodes(remote):
     print("\n======= Submitting OAR Job =======")
 
     print("1. Best allocation")
@@ -115,7 +106,7 @@ def reserve_nodes():
             "Reservation cancelled"
         )
 
-    submit_output = run_command(cmd)
+    submit_output = remote.run(cmd)
 
     job_match = re.search(
         r"OAR_JOB_ID=(\d+)",
@@ -133,7 +124,7 @@ def reserve_nodes():
 
     time.sleep(10)
 
-    job_info = run_command(
+    job_info = remote.run(
         f"oarstat -fj {job_id}"
     )
 
@@ -161,9 +152,5 @@ def reserve_nodes():
 
     for node in nodes:
         print(node)
-
-def walltime_to_seconds(walltime):
-    h, m, s = map(int, walltime.split(":"))
-    return h*3600 + m*60 + s
-
     return job_id, nodes, walltime_to_seconds(walltime)
+
