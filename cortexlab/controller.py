@@ -10,7 +10,7 @@ from cortexlab_remote import cortexlab_Remote
 def main():
     print("\n Welcome to the cortexlab controller script")
     
-    remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity")
+    remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity", key_filename=r"")
     """
     #Remotely Reserve nodes via OAR resevation.py used here.
     job_id, nodes, walltime = reserve_nodes(remote)
