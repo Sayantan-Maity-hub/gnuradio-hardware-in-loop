@@ -11,7 +11,7 @@ def main():
     print("\n Welcome to the cortexlab controller script")
     
     remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity")
-    """
+    
     #Remotely Reserve nodes via OAR resevation.py used here.
     job_id, nodes, walltime = reserve_nodes(remote)
     print(job_id)
@@ -25,8 +25,8 @@ def main():
     
     remote.upload_folder("scenario", "scenario")
 
-    """
-    nodes = ['mnode14', 'mnode21']
+    
+    
     #Remotely Create a task using minus task create command.
     create_task(remote)
 

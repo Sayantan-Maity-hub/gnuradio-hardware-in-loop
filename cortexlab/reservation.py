@@ -44,7 +44,7 @@ def reserve_nodes(remote):
         )
 
         required_nodes = input(
-            "Enter required nodes name: "
+            "Enter required nodes name(node,node): "
         )
 
         nodes_numbers = [
@@ -95,17 +95,21 @@ def reserve_nodes(remote):
             "Invalid option"
         )
 
-    print("\nGenerated OAR Command:\n")
-    print(cmd)
+   
 
-    confirm = input(
-        "\nSubmit reservation? (y/n): "
-    )
+    #Reservation Change option
+    while True:
+        print("\nGenerate OAR Command:\n")
+        print(cmd)
 
-    if confirm.lower() != "y":
-        raise RuntimeError(
-            "Reservation cancelled"
-        )
+        confirm = input("\nSubmit reservation? (y/n/edit): ").lower
+        if confirm == "y":
+            break
+        elif confirm=="edit":
+            print("\nReconfiguring reservation..\n")
+            return reserve_nodes(remote)
+        else:
+            print("Invalid input. Type y/n/edit")
 
     submit_output = remote.run(cmd)
 
