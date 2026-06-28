@@ -102,7 +102,7 @@ def reserve_nodes(remote):
         print("\nGenerate OAR Command:\n")
         print(cmd)
 
-        confirm = input("\nSubmit reservation? (y/n/edit): ").lower
+        confirm = input("\nSubmit reservation? (y/n/edit):").lower()
         if confirm == "y":
             break
         elif confirm=="edit":
