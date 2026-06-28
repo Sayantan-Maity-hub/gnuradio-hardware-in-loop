@@ -123,11 +123,25 @@ def reserve_nodes(remote):
             "Failed to extract job ID"
         )
 
-    job_id = job_match.group(1)
+    job_id = int(job_match.group(1))
 
+    #Failure case
+    if job_id < 0:
+        print("\n OAR REQUES FAILED")
+        print("Reason from system:\n")
+        print(submit_output)
+        while True:
+            option = input("\nOption: retry / cancel: ").lower()
+            if option == "retry":
+                return reserve_nodes(remote)
+            elif option == "cancel":
+                raise RuntimeError("Reservation Cancelled")
+            else:
+                print("\nInvalid input")
+    
     print(f"\nJob ID: {job_id}")
 
-    time.sleep(10)
+    
 
     job_info = remote.run(
         f"oarstat -fj {job_id}"
