@@ -3,15 +3,13 @@ registry = {}
 lock = threading.Lock()
 def update_node(node, data):
     with lock:
-        os_data = data.get("os", {})
+        os_data = data.get("os", "")
+        pretty = None
         if isinstance(os_data, str):
-            pretty =None
-            for line in os_data.splitlines():
-                if line.startswith("PRETTY_NAME="):
-                    pretty = line.split("=",1)[1].strip('"')
-                    break
-        else:
-            pretty = None
+                    for line in os_data.splitlines():
+                         if line.startswith("PRETTY_NAME="):
+                              pretty = line.split("=", 1)[1].strip('"')
+                              break
 
         registry[node]={
             "hostname": data.get("hostname"),

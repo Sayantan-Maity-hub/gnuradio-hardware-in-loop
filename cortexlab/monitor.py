@@ -1,7 +1,6 @@
 import time
 from registry import update_node
 from ssh_client import SSHConnection
-from flask_server import socketio
 
 def monitor_nodes(nodes, interval=30):
     connections = {}
@@ -17,28 +16,13 @@ def monitor_nodes(nodes, interval=30):
             try:
                 ssh = connections[node]
                 info = ssh.get_node_info()
-                socketio.emit(
-                    "node_updat",
-                    {
-                        "node": node,
-                        "data": info
-                    }
-                )
                 update_node(node, info)
                 print(f"[ONLINE] {node}")
             except Exception as e:
-                offline_data = {
-                    "hostname": node.split(".")[0],
-                    "status": "OFFLINE",
-                    "os": None
-                }
-                update_node(node, offline_data)
-                socketio.emit(
-                    "node_update",
-                    {
-                        "node": node,
-                        "data": offline_data
+                update_node(node, {
+                        "status": "OFFLINE",
+                        "error": str(e)
                     }
                 )
                 print(f"[OFFLINE] {node}: {e}")
-        time.sleep(interval)
+    time.sleep(interval)

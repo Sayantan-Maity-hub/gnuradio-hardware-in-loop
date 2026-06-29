@@ -149,8 +149,7 @@ def reserve_nodes(remote):
     for attempt in range (attempts):
         job_info = remote.run(f"oarstat -fj {job_id}")
         print(f"\n [attempt {attempt+1}] Checking job status...")
-        print(job_info)
-        
+    
         state_match = re.search(r"state\s*=\s*(\w+)", job_info) 
         state = state_match.group(1) if state_match else "UNKNOWN"
         
