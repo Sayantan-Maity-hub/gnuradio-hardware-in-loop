@@ -1,5 +1,5 @@
-description: Controller Test
-duration: 7200
+description: cortexlab test
+duration: 600
 nodes:
   node14:
     container:

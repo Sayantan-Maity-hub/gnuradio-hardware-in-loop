@@ -2,3 +2,5 @@ paramiko
 flask
 pyyaml
 pytest
+datetime
+flask-socketio

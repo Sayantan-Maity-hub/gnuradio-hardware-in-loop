@@ -1,12 +1,10 @@
 import yaml
 import time
-def hostname_to_scenario_name(host):
-    short=host.split(".")[0]
-    return short.replace("mnode", "node")
 
 def generate_scenario(nodes, walltime):
+    description = input("Enter Test Description: \n")
     scenario = {
-        "description": "Controller Test",
+        "description": f"{description}",
         "duration": walltime,
         "nodes": {}
 
@@ -14,7 +12,7 @@ def generate_scenario(nodes, walltime):
     
     scenario_nodes = []
     for host in nodes:
-        node_name=(hostname_to_scenario_name(host))
+        node_name= host
 
         scenario["nodes"][node_name] = {
             "container": [
@@ -52,6 +50,7 @@ def wait_for_task_running(remote, task_id):
             return
 
         if "state=ERROR" in output or "aborted=True" in output:
+            print(output)
             raise Exception("Task failed")
 
         print("Still waiting...")

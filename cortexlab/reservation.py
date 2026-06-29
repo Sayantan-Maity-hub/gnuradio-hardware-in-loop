@@ -1,5 +1,6 @@
 import re
 import time
+from datetime import datetime
 
 def walltime_to_seconds(walltime):
     h, m, s = map(int, walltime.split(":"))
@@ -143,13 +144,16 @@ def reserve_nodes(remote):
 
     nodes = None
     job_info = ""
+    attempts = 30
     
-    for attempt in range (30):
+    for attempt in range (attempts):
         job_info = remote.run(f"oarstat -fj {job_id}")
         print(f"\n [attempt {attempt+1}] Checking job status...")
+        print(job_info)
         
         state_match = re.search(r"state\s*=\s*(\w+)", job_info) 
         state = state_match.group(1) if state_match else "UNKNOWN"
+        
         print(f"State: {state}")
 
         if state == "Running":
@@ -157,13 +161,8 @@ def reserve_nodes(remote):
             if host_match:
                 host_string = host_match.group(1).strip()
                 nodes = host_string.split("+")
-                print("\nAllocated Nodes:")
-                for node in nodes:
-                    print(node)
                 break
-        sached_match = re.search(r"schduled_start\s*=\s*(.+)", job_info)
-        if sached_match:
-            print("Scheduled start:", sached_match.group(1))
+        
         time.sleep(5)
     if nodes is None:
         raise RuntimeError("Nodes not assigned yet. Job still waiting of failed allocation")
