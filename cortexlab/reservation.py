@@ -141,35 +141,33 @@ def reserve_nodes(remote):
     
     print(f"\nJob ID: {job_id}")
 
+    nodes = None
+    job_info = ""
     
+    for attempt in range (30):
+        job_info = remote.run(f"oarstat -fj {job_id}")
+        print(f"\n [attempt {attempt+1}] Checking job status...")
+        
+        state_match = re.search(r"state\s*=\s*(\w+)", job_info) 
+        state = state_match.group(1) if state_match else "UNKNOWN"
+        print(f"State: {state}")
 
-    job_info = remote.run(
-        f"oarstat -fj {job_id}"
-    )
+        if state == "Running":
+            host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
+            if host_match:
+                host_string = host_match.group(1).strip()
+                nodes = host_string.split("+")
+                print("\nAllocated Nodes:")
+                for node in nodes:
+                    print(node)
+                break
+        sached_match = re.search(r"schduled_start\s*=\s*(.+)", job_info)
+        if sached_match:
+            print("Scheduled start:", sached_match.group(1))
+        time.sleep(5)
+    if nodes is None:
+        raise RuntimeError("Nodes not assigned yet. Job still waiting of failed allocation")
 
-    print("\nJob Info:")
-    print(job_info)
 
-    host_match = re.search(
-        r"assigned_hostnames\s*=\s*(.+)",
-        job_info
-    )
-
-    if not host_match:
-        raise RuntimeError(
-            "Failed to extract hostnames"
-        )
-
-    host_string = (
-        host_match.group(1)
-        .strip()
-    )
-
-    nodes = host_string.split("+")
-
-    print("\nAllocated Nodes:")
-
-    for node in nodes:
-        print(node)
     return job_id, nodes, walltime_to_seconds(walltime)
 
