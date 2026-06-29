@@ -1,11 +1,11 @@
 description: Controller Test
-duration: 600
+duration: 7200
 nodes:
   node14:
     container:
     - image: ghcr.io/cortexlab/cxlb-gnuradio-3.10:1.5
       command: /usr/sbin/sshd -p 2222 -D
-  node21:
+  node16:
     container:
     - image: ghcr.io/cortexlab/cxlb-gnuradio-3.10:1.5
       command: /usr/sbin/sshd -p 2222 -D

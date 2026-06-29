@@ -14,16 +14,11 @@ def main():
     
     #Remotely Reserve nodes via OAR resevation.py used here.
     job_id, nodes, walltime = reserve_nodes(remote)
-    print(job_id)
-    print(nodes)
-
-    for node in nodes:
-        print(node)
 
     #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
     generate_scenario(nodes, walltime)
     
-    remote.upload_folder("scenario", "scenario")
+    remote.upload_folder("cortexlab/scenario", "scenario")
 
     
     

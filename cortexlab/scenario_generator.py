@@ -26,7 +26,7 @@ def generate_scenario(nodes, walltime):
             ]
         }
 
-    with open("scenario/scenario.yaml","w") as f:
+    with open("cortexlab/scenario/scenario.yaml","w") as f:
         yaml.dump(scenario, f, sort_keys=False)
 
 def create_task(remote):
