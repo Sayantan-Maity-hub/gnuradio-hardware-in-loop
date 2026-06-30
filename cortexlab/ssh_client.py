@@ -48,6 +48,11 @@ class SSHConnection:
             "hostname": hostname.strip(),
             "os": os_info
         }
+    def upload_file(self, local_path, remote_path):
+        stfp = self.gateway.open_sftp()
+        stfp.put(local_path, remote_path)
+        stfp.close()
+        
     def close(self):
         self.gateway.close()
     

@@ -3,11 +3,23 @@ from registry import update_job
 from ssh_client import SSHConnection
 
 def run_job(node, script_path):
+    remote_path = f"/tmp/{script_path.split('/')[1]}"
+
+    ssh = SSHConnection(node)
+
     print(f"{node} --> Job Assigned")
     update_job(node = node, job_name = script_path, state = "ASSIGNED")
-    ssh = SSHConnection(node)
+    
+    
+    #upload script:
+    print(f"{node} --> Uploading script...")
+    ssh.upload_file(script_path, remote_path)
+
+    #make script executable:
     print(f"{node} --> Preparing script permisssion")
     ssh.run_on_node(f"chomd +x {script_path}")
+
+    #job running..
     print(f"{node} --> Job Running...")
     update_job(node=node, job_name = script_path, state = "RUNNING")
 
