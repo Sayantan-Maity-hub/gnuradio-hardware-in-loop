@@ -17,13 +17,13 @@ def run_job(node, script_path):
 
     #make script executable:
     print(f"{node} --> Preparing script permisssion")
-    ssh.run_on_node(f"chomd +x {script_path}")
+    ssh.run_on_node(f"chmod +x {remote_path}")
 
     #job running..
     print(f"{node} --> Job Running...")
     update_job(node=node, job_name = script_path, state = "RUNNING")
 
-    output = ssh.run_on_node(f"bash {script_path}")
+    output = ssh.run_on_node(f"bash {remote_path}")
     steps = []
     for line in output.splitlines():
         match = re.match(r"::STATUS:(.*?):(PASS|FAIL):", line)
