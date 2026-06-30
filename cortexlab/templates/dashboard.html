@@ -1,47 +1,151 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CortexLab Node Monitor</title>
+    <title>CortexLab Controller</title>
 
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
+            margin: 30px;
+            background: #f6f8fa;
+        }
+        h2{
+            margin-bottom: 5px;
+        }
+        .container{
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        pre {
-            background: #f4f4f4;
+        .card{
+            background: while;
+            padding: 15px;
+            border-radius:10px;
+            width: 260px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+        }
+        .oneline{
+            color: green;
+            font-weight: bold;
+        }
+        .offline{
+            color: red;
+            font-weight: bold;
+
+        }
+        .job-box{
+            margin-top: 30px;
             padding: 20px;
-            border-radius: 8px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1)
+
+
+        }
+        input{
+            padding: 8px;
+            margin: 5px;
+            width: 200px
+
+        }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-<h2>CortexLab Node Status</h2>
+<h2>CortexLab Node Dashboard</h2>
 
 <p>Updates automatically every 2 seconds.</p>
 
-<pre id="nodes">Loading...</pre>
+<div class="container" id="nodes"></div>
+<!--JOB CONTROL PANEL-->
+<div class="job-box">
+    <h3>Run Job on Node</h3>
+    <select id="nodeSelect"></select>
+    <input id="script" placeholder="/tmp/test.sh" />
+    <button onclick="startJob()">Start Job</button>
+    <p id="jobStatus"></p>
+</div>
 
 <script>
+
 async function updateNodes() {
     try {
         const response = await fetch("http://127.0.0.1:5678/status/nodes");
         const data = await response.json();
 
-        document.getElementById("nodes").textContent =
-            JSON.stringify(data, null, 4);
+        const container = getElementById("nodes")
+        container.innerHTML = ""
+        for (const [node, info] of Object.entries(data)){
+            const statusClass = info.status === "ONLINE" ? "online" : "offline";
+            container.innerHTML += `
+                <div class="card">
+                    <h3>${node}</h3>
+                    <p><b>Hostname:</b> ${info.hostname}</p>
+                    <p><b>Status:</b> <span class = "${statusClass}">${info.status}</span></p>
+                    <p><b>OS:</b> ${info.os || "N/A"}</p>
+                </div>
+            `;    
+        }
+    
     }
     catch(err) {
-        document.getElementById("nodes").textContent =
-            "Failed to fetch node information.";
+        document.getElementById("nodes").innerHTML =
+            "<p style = 'color:red'>Failed to load nodes.";
     }
+}
+async function loadNodesIntoDropdown() {
+    try{
+        const res = await fetch("http://127.0.1.5678/status/nodes");
+        const data = await res.json();
+        const select = document.getElementById("nodeSelect");
+        select.innerHTML = "";
+
+        for (const node of Object.keys(data)){
+            const option = document.createElement("option")
+            option.value = node;
+            option.textContent = node;
+            select.appendChild(option);
+        }
+
+    }catch (err) {
+        console.log("Failed to load nodes for dropdown");
+    }
+    
+}
+function startJob(){
+    const node = document.getElementById("nodeSelect").value;
+    const script = document.getElementById("script").value;
+
+    fetch("http//127.0.0.1:5678/control/job/start", {
+        menthod: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            node: node,
+            script: script
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("jobStatus").innerText= "Job started on " + data.node;
+    })
+    .catch(() => {
+        document.getElementById("jobStat").innerText= "Failed to start job";
+    });
+
 }
 
 updateNodes();
+loadNodesIntoDropdown();
 
-setInterval(updateNodes, 2000);
+setInterval(() => {updateNodes(); loadNodesIntoDropdown();}, 2000);
 </script>
 
 </body>
