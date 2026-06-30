@@ -1,6 +1,6 @@
 from flask import Flask, Response, render_template, request
 from flask_cors import CORS
-from registry import get_nodes
+from registry import get_nodes, get_node
 from job_runner import run_job
 import threading
 import json
@@ -29,6 +29,12 @@ def start_job():
     return {
         "message": "Job started", "node": node, "script": script
     }
+@app.route("/status/job/<node>"):
+def job_status(node):
+    node_data = get_node(node)
+    if not node_data:
+        return {"error": "node not found"}, 404
+    return node_data.get("job", {})
 
 
 def start_flask():
