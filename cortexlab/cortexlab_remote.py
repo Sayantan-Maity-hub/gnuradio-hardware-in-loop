@@ -26,4 +26,4 @@ class cortexlab_Remote:
             sftp.close()
         
     def colse(self):
-            self.ssh.cloase()
+            self.ssh.close()

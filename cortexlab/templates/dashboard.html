@@ -73,10 +73,11 @@
 </div>
 
 <script>
+const API = "http://127.0.0.1:5678/status/nodes";
 
 async function updateNodes() {
     try {
-        const response = await fetch("http://127.0.0.1:5678/status/nodes");
+        const response = await fetch(API);
         const data = await response.json();
 
         const container = document.getElementById("nodes")
@@ -100,8 +101,9 @@ async function updateNodes() {
     }
 }
 async function loadNodesIntoDropdown() {
+
     try{
-        const res = await fetch("http://127.0.0.1.5678/status/nodes");
+        const res = await fetch(API);
         const data = await res.json();
         const select = document.getElementById("nodeSelect");
         select.innerHTML = "";
