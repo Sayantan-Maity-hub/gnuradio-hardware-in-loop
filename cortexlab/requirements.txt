@@ -3,4 +3,4 @@ flask
 pyyaml
 pytest
 datetime
-flask-socketio
+flask_cors

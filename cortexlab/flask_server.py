@@ -1,4 +1,5 @@
 from flask import Flask, Response, render_template
+from flask_cors import CORS
 from registry import get_nodes
 import json
 

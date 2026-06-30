@@ -2,6 +2,8 @@ import time
 from registry import update_node
 from ssh_client import SSHConnection
 
+
+
 def monitor_nodes(nodes, interval=30):
     connections = {}
     for node in nodes:
@@ -25,5 +27,5 @@ def monitor_nodes(nodes, interval=30):
                     }
                 )
                 print(f"[OFFLINE] {node}: {e}")
-        time.sleep(10)
+        time.sleep(interval)
     

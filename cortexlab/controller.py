@@ -42,7 +42,7 @@ def main():
     nodes = ["node14", "node16"]
     
     #Monitoring the nodes using monitor.py to check if they are online or offline.
-    monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 30), daemon=True) #threading to monitor the nodes in the background.
+    monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 10), daemon=True) #threading to monitor the nodes in the background.
     monitor_thread.start()
     print("monitoring nodes started in the background.")
     
