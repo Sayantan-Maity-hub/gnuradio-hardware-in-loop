@@ -3,6 +3,13 @@ registry = {}
 lock = threading.Lock()
 def update_node(node, data):
     with lock:
+        existing_job = registry.get(node, {}).get("job",
+                                                  {
+                                                       "name":None,
+                                                       "state":None,
+                                                       "step": []
+                                                  }
+                                                )
         os_data = data.get("os", "")
         pretty = None
         if isinstance(os_data, str):
@@ -14,10 +21,31 @@ def update_node(node, data):
         registry[node]={
             "hostname": data.get("hostname"),
             "status": data.get("status"),
-            "os": pretty
+            "os": pretty,
+            "job": existing_job
         }
-    # Notify  clients after releasing the lock
+def update_job(node, name = None, state = None, steps = None):
+     with lock:
+          if node not in registry:
+               registry[node] = {
+                    "hostname": node,
+                    "status": "UNKNOWN",
+                    "os": None,
+                    "job": {}
+               }
+          registry[node]["job"] = {
+               "name": name,
+               "state": state,
+               "step": steps or []
+
+          }
+    
 def get_nodes():
     with lock:
         return dict(registry)
+
+def get_node(node):
+     with lock:
+          return registry.get(node)
+
     
