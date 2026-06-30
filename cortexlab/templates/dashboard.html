@@ -19,7 +19,7 @@
         }
 
         .card{
-            background: while;
+            background: white;
             padding: 15px;
             border-radius:10px;
             width: 260px;
@@ -79,7 +79,7 @@ async function updateNodes() {
         const response = await fetch("http://127.0.0.1:5678/status/nodes");
         const data = await response.json();
 
-        const container = getElementById("nodes")
+        const container = document.getElementById("nodes")
         container.innerHTML = ""
         for (const [node, info] of Object.entries(data)){
             const statusClass = info.status === "ONLINE" ? "online" : "offline";
@@ -101,7 +101,7 @@ async function updateNodes() {
 }
 async function loadNodesIntoDropdown() {
     try{
-        const res = await fetch("http://127.0.1.5678/status/nodes");
+        const res = await fetch("http://127.0.0.1.5678/status/nodes");
         const data = await res.json();
         const select = document.getElementById("nodeSelect");
         select.innerHTML = "";
@@ -122,8 +122,8 @@ function startJob(){
     const node = document.getElementById("nodeSelect").value;
     const script = document.getElementById("script").value;
 
-    fetch("http//127.0.0.1:5678/control/job/start", {
-        menthod: "POST",
+    fetch("http://127.0.0.1:5678/control/job/start", {
+        method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
@@ -137,7 +137,7 @@ function startJob(){
         document.getElementById("jobStatus").innerText= "Job started on " + data.node;
     })
     .catch(() => {
-        document.getElementById("jobStat").innerText= "Failed to start job";
+        document.getElementById("jobStatus").innerText= "Failed to start job";
     });
 
 }

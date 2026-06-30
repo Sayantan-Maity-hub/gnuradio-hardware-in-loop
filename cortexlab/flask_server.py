@@ -16,7 +16,7 @@ def dashboard():
 def status_nodes():
     return Response(json.dumps(get_nodes(), indent = 4), mimetype="application/json")
 
-@app.route("/control/job/start", methos = ["POST"])
+@app.route("/control/job/start", methods = ["POST"])
 def start_job():
     data = request.json
     node = data.get("node")
