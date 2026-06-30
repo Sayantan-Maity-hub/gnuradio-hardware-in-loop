@@ -25,4 +25,5 @@ def monitor_nodes(nodes, interval=30):
                     }
                 )
                 print(f"[OFFLINE] {node}: {e}")
-    time.sleep(interval)
+        time.sleep(10)
+    

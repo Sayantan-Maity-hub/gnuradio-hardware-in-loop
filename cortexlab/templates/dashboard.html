@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CortexLab Node Monitor</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>CortexLab Node Status</h2>
+
+<p>Updates automatically every 2 seconds.</p>
+
+<pre id="nodes">Loading...</pre>
+
+<script>
+async function updateNodes() {
+    try {
+        const response = await fetch("http://127.0.0.1:5678/status/nodes");
+        const data = await response.json();
+
+        document.getElementById("nodes").textContent =
+            JSON.stringify(data, null, 4);
+    }
+    catch(err) {
+        document.getElementById("nodes").textContent =
+            "Failed to fetch node information.";
+    }
+}
+
+updateNodes();
+
+setInterval(updateNodes, 2000);
+</script>
+
+</body>
+</html>

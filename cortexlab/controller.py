@@ -39,7 +39,7 @@ def main():
     #waiting for start task
     wait_for_task_running(remote, task_id)
 
-    
+    nodes = ["node14", "node16"]
     
     #Monitoring the nodes using monitor.py to check if they are online or offline.
     monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 30), daemon=True) #threading to monitor the nodes in the background.

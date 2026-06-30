@@ -1,9 +1,13 @@
-from flask import Flask, Response
+from flask import Flask, Response, render_template
 from registry import get_nodes
 import json
 
 app = Flask(__name__)
 
+@app.route("/")
+
+def dashboard():
+    return render_template("dashboard.html")
 @app.route("/status/nodes")
 
 def status_nodes():
