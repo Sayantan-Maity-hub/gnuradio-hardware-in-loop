@@ -26,7 +26,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 
         }
-        .oneline{
+        .online{
             color: green;
             font-weight: bold;
         }
@@ -67,9 +67,10 @@
 <div class="job-box">
     <h3>Run Job on Node</h3>
     <select id="nodeSelect"></select>
-    <input id="script" placeholder="/tmp/test.sh" />
+    <input id="script" placeholder="/tmp/basic_test.sh" />
     <button onclick="startJob()">Start Job</button>
     <p id="jobStatus"></p>
+
 </div>
 
 <script>
@@ -90,6 +91,7 @@ async function updateNodes() {
                     <p><b>Hostname:</b> ${info.hostname}</p>
                     <p><b>Status:</b> <span class = "${statusClass}">${info.status}</span></p>
                     <p><b>OS:</b> ${info.os || "N/A"}</p>
+                    <p><b>Job:</b> ${info.job?.state || "IDLE"}</p>
                 </div>
             `;    
         }
@@ -137,11 +139,30 @@ function startJob(){
     .then(res => res.json())
     .then(data => {
         document.getElementById("jobStatus").innerText= "Job started on " + data.node;
+        watchJob(data.node);
     })
     .catch(() => {
         document.getElementById("jobStatus").innerText= "Failed to start job";
     });
 
+}
+async function watchJob(node) {
+    const timer = setInterval(async () => {
+        const res = await fetch(`http://127.0.0.1:5678/status/job/${node}`);
+        const job = await res.json();
+
+        document.getElementById("jobStatus").innerText=`${node} --> ${job.state}`;
+        if (job.state === "FINISHED") {
+            clearInterval(timer)
+            let result = "UNKNOWN";
+            if (job.step && job.step.length > 0){
+                result = job.step[0].result;
+            }
+            document.getElementById("jobStatus").innerText=`${node} --> FINISHED | Result: ${result}`;
+            console.log("Steps:", job.step);
+        }
+    }, 2000);
+    
 }
 
 updateNodes();

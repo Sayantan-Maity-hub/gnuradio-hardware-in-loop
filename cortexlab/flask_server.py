@@ -29,7 +29,7 @@ def start_job():
     return {
         "message": "Job started", "node": node, "script": script
     }
-@app.route("/status/job/<node>"):
+@app.route("/status/job/<node>")
 def job_status(node):
     node_data = get_node(node)
     if not node_data:
