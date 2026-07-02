@@ -213,29 +213,28 @@
 </div>
 
 <script>
-const API = "http://127.0.0.1:5678/status/nodes";
+const NODE_API = "http://127.0.0.1:5678/status/nodes";
 
 function toogleReservationFields(){
     const type = document.getElementById("reservationType").value;
-    const preferred = document.getElementById("preferredFields");
-    preferred.style.display = type === "prferred" ? "block": "none";
+    document.getElementById("preferredSection").style.display = type === "prferred" ? "block": "none";
 
 }
-function toggleFutureFields(){
+function toggleFutureSection(){
     const future = document.getElementById("futureReservation").checked;
-    document.getElementById("futureFields").style.display = future ? "block" : "none";
+    document.getElementById("futureSection").style.display = future ? "block" : "none";
 
 }
 async function submitReservation() {
-    const payload = {
-        username: document.getElementById("username").value,
+    const preferredNodes = document.getElementById("preferredNodes").value.split(",").filter(x => x.trim() != "").map(x => parseInt(x.trim()));
+    const payload = {username: document.getElementById("username").value, hostname: document.getElementById("hostname").value,
         reservation_type: document.getElementById("reservationType").value,
         walltime: document.getElementById("walltime").value,
         future: document.getElementById("futureReservation").checked,
         reservation_time: document.getElementById("reservationTime").value,
-        node_count: document.getElementById("nodeCount").value,
-        preferred_node: document.getElementById("prefferedNodes").value.split(",").filter(x => x.trim() !== "").map(x => parseInt(trim())) 
+        preferred_nodes: preferredNodes
     };
+
     try{
         const response = await fetch("http://127.0.0.1:5678/reservation/create", {method: "POST", headers:{"Content-Type": "application/json"}, body:JSON.stringify(payload)});
         const data = await response.json();
@@ -243,7 +242,7 @@ async function submitReservation() {
             document.getElementById("reservationStatus").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
         }
         else{
-            document.getElementById("reservationStatus").innerText = datat.error;
+            document.getElementById("reservationStatus").innerText = data.error;
         }
 
     }
@@ -255,7 +254,7 @@ async function submitReservation() {
 }
 async function updateNodes() {
     try {
-        const response = await fetch(API);
+        const response = await fetch(NODE_API);
         const data = await response.json();
 
         const container = document.getElementById("nodes")
@@ -276,13 +275,13 @@ async function updateNodes() {
     }
     catch(err) {
         document.getElementById("nodes").innerHTML =
-            "<p style = 'color:red'>Failed to load nodes.";
+            "<p style = 'color:red'>Failed to load nodes.</P>";
     }
 }
 async function loadNodesIntoDropdown() {
 
     try{
-        const res = await fetch(API);
+        const res = await fetch(NODE_API);
         const data = await res.json();
         const select = document.getElementById("nodeSelect");
         select.innerHTML = "";
@@ -294,7 +293,8 @@ async function loadNodesIntoDropdown() {
             select.appendChild(option);
         }
 
-    }catch (err) {
+    }
+    catch (err) {
         console.log("Failed to load nodes for dropdown");
     }
     
