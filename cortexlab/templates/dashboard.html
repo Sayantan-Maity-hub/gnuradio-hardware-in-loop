@@ -157,7 +157,7 @@
         <label>Hostname</label>
         <input id="hostname" placeholder="@gw.cortexlab.fr">
         <label> Reservation Type</label>
-        <select id="reservationType" onchange="toggleReservationFields"()>
+        <select id="reservationType" onchange="toggleReservationFields()">
             <option value="best">BEST Allocation</option>
             <option value="preferred">Preferred Nodes</option>
 
@@ -167,7 +167,7 @@
 
         <div id="preferredSection" style="display: none;">
             <label>Preferred Nodes</label>
-            <input id="prefferedNodes" placeholder="14,16">
+            <input id="preferredNodes" placeholder="14,16">
 
         </div>
         <div class="checkbox-row">
@@ -215,9 +215,9 @@
 <script>
 const NODE_API = "http://127.0.0.1:5678/status/nodes";
 
-function toogleReservationFields(){
+function toggleReservationFields(){
     const type = document.getElementById("reservationType").value;
-    document.getElementById("preferredSection").style.display = type === "prferred" ? "block": "none";
+    document.getElementById("preferredSection").style.display = type === "preferred" ? "block": "none";
 
 }
 function toggleFutureSection(){
