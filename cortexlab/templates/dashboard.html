@@ -71,11 +71,77 @@
     <button onclick="startJob()">Start Job</button>
     <p id="jobStatus"></p>
 
+     <h3>Reserve Cortexlab Nodes</h3>
+     <input id="username" placeholder="Cortexlab username">
+     <br>
+     <select id="reservationType" onchange="toogleReservationFiels()">
+        <option value="best">Best Allocation</option>
+        <option value="preferred">Preferred Nodes</option>
+     </select>
+     <br>
+     <input id="walltime" placeholder="walltime (HH:MM:SS)">
+     <br>
+     <div id="prefferedFields" style="display: none;">
+        <input id="nodeCount" placeholder="Number if nodes">
+        <br>
+        <label>
+            <input type="checkbox" id="futureReservation" onchange="toggleFutureFields()">
+            Future Reservation
+        </label>
+        <br>
+        <div id="futureFieds" style="display: none;">
+            <input id="reservationTime" type="datetime=local">
+        </div>
+        <button onclick="submitReservation()">
+            Submit Reservation
+        </button>
+        <p id="reservationStatus"></p>
+
+     </div>
+
 </div>
 
 <script>
 const API = "http://127.0.0.1:5678/status/nodes";
 
+function toogleReservationFields(){
+    const type = document.getElementById("reservationType").value;
+    const preferred = document.getElementById("preferredFields");
+    preferred.style.display = type === "prferred" ? "block": "none";
+
+}
+function toggleFutureFields(){
+    const future = document.getElementById("futureReservation").checked;
+    document.getElementById("futureFields").style.display = future ? "block" : "none";
+
+}
+async function submitReservation() {
+    const payload = {
+        username: document.getElementById("username").value,
+        reservation_type: document.getElementById("reservationType").value,
+        walltime: document.getElementById("walltime").value,
+        future: document.getElementById("futureReservation").checked,
+        reservation_time: document.getElementById("reservationTime").value,
+        node_count: document.getElementById("nodeCount").value,
+        preferred_node: document.getElementById("prefferedNodes").value.split(",").filter(x => x.trim() !== "").map(x => parseInt(trim())) 
+    };
+    try{
+        const response = await fetch("http://127.0.0.1:5678/reservation/create", {method: "POST", headers:{"Content-Type": "application/json"}, body:JSON.stringify(payload)});
+        const data = await response.json();
+        if (data.success){
+            document.getElementById("reservationStatus").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
+        }
+        else{
+            document.getElementById("reservationStatus").innerText = datat.error;
+        }
+
+    }
+    catch(err){
+        document.getElementById("reservationStatus").innerText = "Reservation request failed.";
+    
+    }
+
+}
 async function updateNodes() {
     try {
         const response = await fetch(API);

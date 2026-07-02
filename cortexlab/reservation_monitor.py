@@ -1,0 +1,50 @@
+import re
+import time
+from datetime import datetime
+from cortexlab_remote import cortexlab_Remote
+from reservation_registry import(reservation_registry, update_reservation)
+
+def reservation_monitor():
+    remote = cortexlab_Remote()
+
+    while True:
+        for job_id in list(reservation_registry.keys()):
+            try:
+                job_info = remote.run(f"oarstat -fj {job_id}")
+
+                state_match = re.search(r"state\s*=\s*(\w+)", job_info)
+                state = (state_match.group(1) if state_match else "UNKNOWN")
+
+                update_reservation(job_id, state = state)
+
+                start_match = re.search(f"scheduledStart\s*=\s*(.+)", job_info)
+                if start_match:
+                    scheduled_start = (start_match.group(1).strip())
+
+                    update_reservation(job_id, scheduled_start=scheduled_start)
+
+                    try:
+                        start_dt = datetime.strftime(scheduled_start, "%Y-%m-%d %H:%M:%S")
+                        wait_seconds = max(0, int((start_dt-datetime.now()).total_seconds()))
+
+                        update_reservation(job_id, wait_seconds=wait_seconds)
+                    except Exception:
+                        pass
+                
+                host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
+                if host_match:
+                    host_string = (host_match.group(1).strip())
+                    if host_string:
+                        nodes = host_string.split("+")
+                        clean_nodes = []
+                        for n in nodes:
+                            short = (n.split(".")[0].replace("mnode", "node"))
+                            clean_nodes.append(short)
+                        update_reservation(job_id, assigned_nodes=clean_nodes)
+                    
+                if state in ["Terminated", "Error", "Finishing"]:
+                    update_reservation(job_id, finished = True)
+            except Exception as e:
+                print(f"Resevation monitor error for {job_id}: {e}")
+        time.sleep(5)
+        

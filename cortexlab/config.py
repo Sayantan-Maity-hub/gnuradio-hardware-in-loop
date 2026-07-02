@@ -1,0 +1,6 @@
+USERNAME = None
+HOSTNAME = None
+JOB_ID = None
+TASK_ID = None
+NODES = None
+WALLTIME = None

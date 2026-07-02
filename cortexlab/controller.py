@@ -6,38 +6,47 @@ from monitor import monitor_nodes
 from registry import get_nodes
 from flask_server import start_flask
 from cortexlab_remote import cortexlab_Remote
+import config
 
 def main():
+
     print("\n Welcome to the cortexlab controller script")
+
+    config.USERNAME = input("Enter your username: \n")
+    config.HOSTNAME = input("Enter the hostname: \n")
     
-    remote = cortexlab_Remote(hostname="gw.cortexlab.fr", username="sayantan_maity")
-    
+    remote = cortexlab_Remote()
+
     #Remotely Reserve nodes via OAR resevation.py used here.
-    job_id, nodes, walltime = reserve_nodes(remote)
+    reserve_nodes()
+    
     clean_nodes = []
 
     for n in nodes:
-        short = n.split(".")[0]          # mnode14.cortexlab.fr → mnode14
-        short = short.replace("mnode", "node")  # optional rename
+        short = n.split(".")[0]          
+        short = short.replace("mnode", "node") 
         clean_nodes.append(short)
     nodes = clean_nodes
+    config.NODES = nodes
     print(nodes)
 
 
-    #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
-    generate_scenario(nodes, walltime)
-    
-    remote.upload_folder("cortexlab/scenario", "scenario")
 
+
+    #Generate scenario.yaml file for all the reserved nodes with no command just to start ssh server on node.
+    job_folder = str(config.JOB_ID)
+    generate_scenario(job_folder, nodes, config.WALLTIME)
     
+    remote.upload_folder(job_folder, job_folder)
+
     
     #Remotely Create a task using minus task create command.
-    create_task(remote)
+    create_task(remote, job_folder)
 
     #Remotely Submit the task using minus task submit command.
-    task_id = submit_task(remote)
+    config.TASK_ID = submit_task(remote, job_folder)
     #waiting for start task
-    wait_for_task_running(remote, task_id)
+    wait_for_task_running(remote, config.TASK_ID)
 
     
     

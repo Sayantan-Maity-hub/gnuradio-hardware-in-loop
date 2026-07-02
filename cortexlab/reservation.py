@@ -1,6 +1,11 @@
 import re
 import time
 from datetime import datetime
+from cortexlab_remote import cortexlab_Remote
+from reservation_registry import create_reservation
+import config
+
+VALID_NODES = [2, 4, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 36, 37, 38]
 
 def walltime_to_seconds(walltime):
     h, m, s = map(int, walltime.split(":"))
@@ -10,49 +15,39 @@ def walltime_to_seconds(walltime):
 
 # Submit OAR job
 
-def reserve_nodes(remote):
+def reserve_nodes(username, reservation_type, walltime, future=False, reservation_time = None, node_count=None, preferred_nodes=None, script=None):
+
+    
     print("\n======= Submitting OAR Job =======")
+    remote = cortexlab_Remote()
 
-    print("1. Best allocation")
-    print("2. Preferred nodes")
-    print("3. Future reservation")
+    try:
+        walltime_to_seconds(walltime)
+    except Exception:
+        raise ValueError("walltime must be HH:MM:SS")
+    
+    sleep_time = (walltime_to_seconds(walltime)+60)
+    
+    #BEST Allocation
+    if reservation_type == "best":
+        resource = f"node=BEST, walltime={walltime}"
+        requested_nodes = []
+    
 
-    choice = input("\nSelect option: ")
-
-    walltime = input(
-        "Enter walltime (HH:MM:SS): "
-    )
-
-    sleep_time = input(
-        "Enter sleep time (in seconds): "
-    )
-
-    # Option 1
-    if choice == "1":
-
-        cmd = (
-            f'oarsub -l nodes=BEST,walltime={walltime} '
-            f'"sleep {sleep_time}"'
-        )
-
-    # Option 2
-    elif choice == "2":
-
-        nodes = int(
-            input(
-                "Enter your required node number: "
-            )
-        )
-
-        required_nodes = input(
-            "Enter required nodes name(node,node): "
-        )
-
-        nodes_numbers = [
-            x.strip()
-            for x in required_nodes.split(",")
-        ]
-
+    # PREFERRED Alocation
+    elif reservation_type == "preferred":
+        if not node_count:
+                    raise ValueError("node_count required")
+                    print("Invalid input. Please enter a positive and valid node number (1-40).")
+        if not preferred_nodes:
+                raise ValueError("preferred node reqired")
+        if not all(n in VALID_NODES for n in preferred_nodes):
+                raise ValueError(
+                    f"Invalid node selected."
+                    f"Valid nodes: {VALID_NODES}"
+                )
+                print("Invalid input. Please enter a valid integer.")
+        nodes_numbers = []
         full_nodes = [
             f"mnode{n}.cortexlab.fr"
             for n in nodes_numbers
@@ -64,53 +59,30 @@ def reserve_nodes(remote):
 
         resource = (
             f'{{"network_address in (\'{node_string}\')"}}'
-            f'/nodes={nodes}'
+            f'/nodes={node_count},'
+            f'walltime={walltime}'
         )
-
-        cmd = (
-            f'oarsub -l {resource},walltime={walltime} '
-            f'"sleep {sleep_time}"'
-        )
-
-    # Option 3
-    elif choice == "3":
-
-        required_nodes = input(
-            "\nHow many nodes needed: "
-        )
-
-        reservation_time = input(
-            "Enter reservation time "
-            "(YYYY-MM-DD HH:MM:SS): "
-        )
-
-        cmd = (
-            f'oarsub -l nodes={required_nodes},'
-            f'walltime={walltime} '
-            f'-r "{reservation_time}" '
-            f'"sleep {sleep_time}"'
-        )
+        required_nodes = preferred_nodes
 
     else:
-        raise ValueError(
-            "Invalid option"
-        )
+         raise ValueError("Unknown reservation type")
 
-   
+    
+    #Build OAR command
+    cmd = f'oarsub -l {resource}'
 
-    #Reservation Change option
-    while True:
-        print("\nGenerate OAR Command:\n")
-        print(cmd)
+    if future:
+         if not reservation_time:
+              raise ValueError("reservation_time required")
+         try:
+              datetime.strptime(reservation_time, "%Y-%m-%d %H:%M:%S")
+         except ValueError:
+              raise ValueError("reservation_time must be YYYY-MM-DD HH:MM:SS")
+         cmd += (f'-r "res{reservation_time}" ')
+    cmd+= f'"sleep {sleep_time}"'
 
-        confirm = input("\nSubmit reservation? (y/n/edit):").lower()
-        if confirm == "y":
-            break
-        elif confirm=="edit":
-            print("\nReconfiguring reservation..\n")
-            return reserve_nodes(remote)
-        else:
-            print("Invalid input. Type y/n/edit")
+    print("\nGenerate OAR Command:\n")
+    print(cmd)
 
     submit_output = remote.run(cmd)
 
@@ -121,7 +93,8 @@ def reserve_nodes(remote):
 
     if not job_match:
         raise RuntimeError(
-            "Failed to extract job ID"
+            f"Failed to extract job ID\n"
+            f"{submit_output}"
         )
 
     job_id = int(job_match.group(1))
@@ -142,30 +115,21 @@ def reserve_nodes(remote):
     
     print(f"\nJob ID: {job_id}")
 
-    nodes = None
-    job_info = ""
-    attempts = 30
-    
-    for attempt in range (attempts):
-        job_info = remote.run(f"oarstat -fj {job_id}")
-        print(f"\n [attempt {attempt+1}] Checking job status...")
-    
-        state_match = re.search(r"state\s*=\s*(\w+)", job_info) 
-        state = state_match.group(1) if state_match else "UNKNOWN"
-        
-        print(f"State: {state}")
+    #store initial data in registry
+    create_reservation(
+         job_id = job_id,
+         username=username,
+         reservation_type = reservation_type,
+         wallttime = walltime,
+         future = future,
+         reservation_time = reservation_time,
+         requested_nodes = requested_nodes,
+         requested_node_no = node_count,
+         script=script,
+         command = cmd
+        )
+    print(f"\nReservation submitted successfully")
 
-        if state == "Running":
-            host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
-            if host_match:
-                host_string = host_match.group(1).strip()
-                nodes = host_string.split("+")
-                break
-        
-        time.sleep(5)
-    if nodes is None:
-        raise RuntimeError("Nodes not assigned yet. Job still waiting of failed allocation")
+    return job_id
 
-
-    return job_id, nodes, walltime_to_seconds(walltime)
 

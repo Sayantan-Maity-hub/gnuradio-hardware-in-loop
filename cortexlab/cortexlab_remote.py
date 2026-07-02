@@ -25,5 +25,6 @@ class cortexlab_Remote:
             sftp.put(f"{local_folder}/scenario.yaml", f"{remote_folder}/scenario.yaml")
             sftp.close()
         
-    def colse(self):
+    def close(self):
             self.ssh.close()
+

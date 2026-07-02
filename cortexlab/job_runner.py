@@ -1,9 +1,11 @@
 import re
 from registry import update_job
 from ssh_client import SSHConnection
+import config
 
 def run_job(node, script_path):
-    remote_path = f"/tmp/{script_path.split('/')[1]}"
+    script_file = script_path.split('/')[-1]
+    
 
     ssh = SSHConnection(node)
 
@@ -13,7 +15,7 @@ def run_job(node, script_path):
     
     #upload script:
     print(f"{node} --> Uploading script...")
-    ssh.upload_file(script_path, remote_path)
+    remote_path = ssh.upload_file(script_path, node)
 
     #make script executable:
     print(f"{node} --> Preparing script permisssion")
@@ -23,7 +25,7 @@ def run_job(node, script_path):
     print(f"{node} --> Job Running...")
     update_job(node=node, job_name = script_path, state = "RUNNING")
 
-    output = ssh.run_on_node(f"bash {remote_path}")
+    output = ssh.run_on_node(f"./{remote_path}")
     steps = []
     for line in output.splitlines():
         match = re.match(r"::STATUS:(.*?):(PASS|FAIL):", line)

@@ -1,5 +1,6 @@
 import paramiko
 import shlex
+import os
 
 class SSHConnection:
     def __init__(self, host):
@@ -9,7 +10,8 @@ class SSHConnection:
         self.gateway.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.gateway.connect(hostname="gw.cortexlab.fr", username="sayantan_maity", pkey=key)
 
-        self.key = key
+        self.base_path = "/cortexlab/homes/sayantan_maity/cortexlab/jobs"
+
 
     def run_on_node(self, command):
         full_cmd = (
@@ -48,11 +50,18 @@ class SSHConnection:
             "hostname": hostname.strip(),
             "os": os_info
         }
-    def upload_file(self, local_path, remote_path):
+    def upload_file(self, local_path, filename):
+        remote_path = f"{self.base_path}/{filename}"
+        print(f"Uploading to shared filesystem: {remote_path}")
+        
         stfp = self.gateway.open_sftp()
         stfp.put(local_path, remote_path)
         stfp.close()
-        
+        print(f"file upload complete...")
+
+        return remote_path
+    
+    
     def close(self):
         self.gateway.close()
     

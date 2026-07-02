@@ -1,7 +1,8 @@
 import yaml
 import time
+import os
 
-def generate_scenario(nodes, walltime):
+def generate_scenario(job_folder, nodes, walltime):
     description = input("Enter Test Description: \n")
     scenario = {
         "description": f"{description}",
@@ -24,16 +25,17 @@ def generate_scenario(nodes, walltime):
             ]
         }
 
-    with open("cortexlab/scenario/scenario.yaml","w") as f:
+    os.makedirs(f"{job_folder}", exist_ok=True)
+
+    with open(f"{job_folder}/scenario.yaml","w") as f:
         yaml.dump(scenario, f, sort_keys=False)
 
-def create_task(remote):
-    output = remote.run("minus task create -f scenario")
+def create_task(remote, folder_path):
+    output = remote.run(f"minus task create -f {folder_path}")
     print (output)
 
-def submit_task(remote):
-    output = remote.run(
-        "minus task submit scenario.task")
+def submit_task(remote, folder_path):
+    output = remote.run(f"minus task submit {folder_path}.task")
     print(f"taskId: {output}")
     return output
 
@@ -46,7 +48,7 @@ def wait_for_task_running(remote, task_id):
         output = remote.run(f"minus task info {task_id}")
 
         if "state=RUNNING" in output:
-            print("Task is RUNNING → nodes are ready")
+            print("Task is RUNNING â†’ nodes are ready")
             return
 
         if "state=ERROR" in output or "aborted=True" in output:
@@ -55,4 +57,5 @@ def wait_for_task_running(remote, task_id):
 
         print("Still waiting...")
         time.sleep(5)
+
 
