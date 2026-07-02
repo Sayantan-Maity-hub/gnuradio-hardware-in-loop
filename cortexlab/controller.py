@@ -1,24 +1,33 @@
 import time
 import threading
-from reservation import reserve_nodes
-from scenario_generator import (create_task, generate_scenario, submit_task, wait_for_task_running)
-from monitor import monitor_nodes
-from registry import get_nodes
 from flask_server import start_flask
-from cortexlab_remote import cortexlab_Remote
-import config
+from reservation_monitor import reservation_monitor
+from monitor import monitor_nodes
+from reservation_registry import get_all_reservation
+
+
 
 def main():
 
     print("\n Welcome to the cortexlab controller script")
 
-    config.USERNAME = input("Enter your username: \n")
-    config.HOSTNAME = input("Enter the hostname: \n")
-    
-    remote = cortexlab_Remote()
+    #Reservation Monitor
+    reservation_thread = threading.Thread(target= reservation_monitor, daemon=True)
+    reservation_thread.start()
+    print("[OK] Reservation monitor started...")
+    '''
 
-    #Remotely Reserve nodes via OAR resevation.py used here.
-    reserve_nodes()
+    #Node state monitor thread
+    reservations = get_all_reservation()
+    for job_id, reservation in reservations.items():
+        if (reservation["state"] == "Running" and reservation["assigned_nodes"]):
+            nodes = reservation["assigned_nodes"]
+            monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 10), daemon=True) #threading to monitor the nodes in the background.
+            monitor_thread.start()
+            print("monitoring nodes started in the background.")
+    
+
+
     
     clean_nodes = []
 
@@ -49,11 +58,8 @@ def main():
     wait_for_task_running(remote, config.TASK_ID)
 
     
-    
+    '''
     #Monitoring the nodes using monitor.py to check if they are online or offline.
-    monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 10), daemon=True) #threading to monitor the nodes in the background.
-    monitor_thread.start()
-    print("monitoring nodes started in the background.")
     
     flask_thread = threading.Thread(target = start_flask, daemon=True)
     flask_thread.start()

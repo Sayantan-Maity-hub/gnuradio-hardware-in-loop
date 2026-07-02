@@ -47,4 +47,3 @@ def reservation_monitor():
             except Exception as e:
                 print(f"Resevation monitor error for {job_id}: {e}")
         time.sleep(5)
-        
