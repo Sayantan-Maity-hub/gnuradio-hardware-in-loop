@@ -2,8 +2,7 @@ import yaml
 import time
 import os
 
-def generate_scenario(job_folder, nodes, walltime):
-    description = input("Enter Test Description: \n")
+def generate_scenario(job_id, nodes, walltime, description):
     scenario = {
         "description": f"{description}",
         "duration": walltime,
@@ -25,9 +24,9 @@ def generate_scenario(job_folder, nodes, walltime):
             ]
         }
 
-    os.makedirs(f"{job_folder}", exist_ok=True)
+    os.makedirs(f"cortexlab/{job_id}", exist_ok=True)
 
-    with open(f"{job_folder}/scenario.yaml","w") as f:
+    with open(f"cortexlab/{job_id}/scenario.yaml","w") as f:
         yaml.dump(scenario, f, sort_keys=False)
 
 def create_task(remote, folder_path):

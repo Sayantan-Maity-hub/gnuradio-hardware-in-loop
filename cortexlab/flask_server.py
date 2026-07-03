@@ -3,6 +3,7 @@ from flask_cors import CORS
 from registry import get_nodes, get_node
 from reservation import reserve_nodes
 from reservation_monitor import reservation_monitor
+from scenario_generator import generate_scenario
 from job_runner import run_job
 import threading
 import json
@@ -45,6 +46,20 @@ def create_reserve():
 
             "error": {e}
         }), 400
+    
+@app.route("/scenerio/generate", method=["POST"])
+def scenario_generation():
+    data = request.json()
+
+    generate_scenario(
+        job_id= data["job_id"],
+        nodes=data["nodes"],
+        walltime=data["walltime"],
+        description=["description"]
+
+    )
+
+    
     
     
 

@@ -7,7 +7,7 @@ def create_reservation(job_id, username, reserevation_type, walltime, future=Fal
 
     with lock:
         reservation_registry[job_id] = {
-            "username": "username",
+            "username": username,
             "job_id": job_id,
             "state": "SUBMITTED",
             "walltime": walltime,

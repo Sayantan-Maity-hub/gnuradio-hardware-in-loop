@@ -188,6 +188,7 @@
     <div class="panel">
         <h2>Reservations</h2>
         <div id="reservationList">
+        
             No reservation yet.
         </div>
     </div>
@@ -259,6 +260,40 @@ async function submitReservation() {
     
     }
 
+}
+async function updateReservations() {
+    try {
+        const response = await fetech("http://127.0.0.1:5678/status/reservations");
+        const reservations = await response.json()
+        const list = document.getElementById("reservationList");
+        list.innerHTML = "";
+        for (const res of reservations){
+            res.assigned_nodes.length > 0 ? res.assigned_nodes.join(", ") : "Waiting allocation";
+
+            list.innerHTML +=`
+            <div class = "reservation-card">
+                <h3> Reservation ${res.job_id}</h3>
+                <p><b>State:</b> ${res.state}</p>
+                <p><b>Nodes:</b> ${assigned_nodes}</p>
+                <p><b>Walltime:</b> ${walltime}</p>
+
+                <p><b>Task ID:</b>
+                    ${res.task_id || "Not Created"}
+                </p>
+                <input id="task-desc-${res.job_id}" placeholder = "Task description">
+                <button onclick = "createTask('${res.job_id}')">Create Task</button>
+            </div>
+            `;
+        }
+        if (reservations.length === 0){
+            list.innerHTML = "No reservations yet.";
+        }
+
+    }
+    catch(err){
+        document.getElementById("reservationList").innerHTML= "Failed to load reservations.";
+
+    }
 }
 async function updateNodes() {
     try {
@@ -352,6 +387,7 @@ async function watchJob(node) {
 
 updateNodes();
 loadNodesIntoDropdown();
+updateReservations();
 
 setInterval(() => {updateNodes(); loadNodesIntoDropdown();}, 2000);
 </script>
