@@ -5,6 +5,7 @@ from cortexlab_remote import cortexlab_Remote
 from reservation_registry import(reservation_registry, update_reservation)
 
 def reservation_monitor():
+    print("reservation monitor started..")
     remote = cortexlab_Remote()
 
     while True:
@@ -18,19 +19,20 @@ def reservation_monitor():
                 update_reservation(job_id, state = state)
 
                 start_match = re.search(f"scheduledStart\s*=\s*(.+)", job_info)
+                submit_match = re.search(f"submissionTime\s*=\s*(.+)", job_info)
                 if start_match:
                     scheduled_start = (start_match.group(1).strip())
+                    submit_time = (submit_match.group(1).strip())
 
                     update_reservation(job_id, scheduled_start=scheduled_start)
 
-                    try:
-                        start_dt = datetime.strftime(scheduled_start, "%Y-%m-%d %H:%M:%S")
-                        wait_seconds = max(0, int((start_dt-datetime.now()).total_seconds()))
+                    start_dt = datetime.strptime(scheduled_start, "%Y-%m-%d %H:%M:%S")
+                    submit_dt = datetime.strptime(submit_time, "%Y-%m-%d %H:%M:%S")
+                    wait_min = max(0, int((start_dt - submit_dt).total_seconds()/60))
+                    print(wait_min)
 
-                        update_reservation(job_id, wait_seconds=wait_seconds)
-                    except Exception:
-                        pass
-                
+                    update_reservation(job_id, waiting_time=wait_min)
+                    
                 host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
                 if host_match:
                     host_string = (host_match.group(1).strip())

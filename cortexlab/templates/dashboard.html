@@ -264,6 +264,15 @@ async function submitReservation() {
 
 }
 async function updateReservations() {
+    const active = document.activeElement;
+
+    if (
+        active &&
+        active.id &&
+        active.id.startsWith("task-desc-")
+    ) {
+        return;
+    }
 
     try {
         const response = await fetch("http://127.0.0.1:5678/status/reservations");
@@ -294,6 +303,7 @@ async function updateReservations() {
         </p>
 
         <p><b>Walltime:</b> ${res.walltime}</p>
+        <p><b>Waiting Time:</b> ${res.waiting_time} Minute</p>
         <input
     id="task-desc-${res.job_id}"
     placeholder="Task description"

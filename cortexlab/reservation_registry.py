@@ -18,7 +18,7 @@ def create_reservation(job_id, username, reservation_type, walltime, future=Fals
             "requested_count": requested_count,
             "assigned_nodes": [],
             "scheduled_start": None,
-            "wait_seconds": None,
+            "waiting_time": None,
             "scenario_generate": False,
             "scenatio_upload": False,
 
@@ -31,11 +31,12 @@ def create_reservation(job_id, username, reservation_type, walltime, future=Fals
 def update_reservation(job_id, **kwargs):
 
     with lock:
-        if job_id in reservation_registry:
+        if job_id not in reservation_registry:
             return
         
         reservation_registry[job_id].update(kwargs)
         reservation_registry[job_id]["last_update"] = time.time()
+        print(kwargs)
 def get_reservation(job_id):
     with lock:
         return reservation_registry.get(job_id)

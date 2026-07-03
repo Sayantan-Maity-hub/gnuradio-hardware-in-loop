@@ -32,6 +32,7 @@ def create_reserve():
             reservation_time = data.get("reservatoion_time"),
             preferred_nodes=data.get("preferred_nodes", []),           
         )
+        reservation_monitor();
         return jsonify({
             "job_id": job_id
             
