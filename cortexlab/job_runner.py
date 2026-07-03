@@ -1,7 +1,6 @@
 import re
 from registry import update_job
 from ssh_client import SSHConnection
-import config
 
 def run_job(node, script_path):
     script_file = script_path.split('/')[-1]

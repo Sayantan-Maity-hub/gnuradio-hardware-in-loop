@@ -2,19 +2,18 @@ import time
 import threading
 from flask_server import start_flask
 from reservation_monitor import reservation_monitor
-from monitor import monitor_nodes
-from reservation_registry import get_all_reservation
-
 
 
 def main():
 
     print("\n Welcome to the cortexlab controller script")
 
-    #Reservation Monitor
-    reservation_thread = threading.Thread(target= reservation_monitor, daemon=True)
-    reservation_thread.start()
-    print("[OK] Reservation monitor started...")
+    flask_thread = threading.Thread(target = start_flask, daemon=True)
+    flask_thread.start()
+    print("Flask API available at:")
+    print("http://localhost:5678/status/nodes")
+
+
     '''
 
     #Node state monitor thread
@@ -61,11 +60,7 @@ def main():
     '''
     #Monitoring the nodes using monitor.py to check if they are online or offline.
     
-    flask_thread = threading.Thread(target = start_flask, daemon=True)
-    flask_thread.start()
-    print("Flask API available at:")
-    print("http://localhost:5678/status/nodes")
-
+   
     try:
         while True:
             time.sleep(1)

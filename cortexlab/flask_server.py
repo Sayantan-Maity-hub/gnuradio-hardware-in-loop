@@ -2,12 +2,15 @@ from flask import Flask, Response, render_template, request, jsonify
 from flask_cors import CORS
 from registry import get_nodes, get_node
 from reservation import reserve_nodes
+from reservation_monitor import reservation_monitor
 from job_runner import run_job
 import threading
 import json
 
 
 app = Flask(__name__)
+
+CORS(app)
 
 @app.route("/")
 def dashboard():
@@ -16,21 +19,31 @@ def dashboard():
 @app.route("/reservation/create", methods=["POST"])
 def create_reserve():
     data = request.json
+
     try:
         job_id = reserve_nodes(
+            hostname= data["hostname"],
             username = data["username"],
             reservation_type = data["reservation_type"],
             walltime = data["walltime"],
             future = data["future"],
             reservation_time = data.get("reservatoion_time"),
-            node_count = data.get("node_count"),
-            prefered_node=data.get("prefered_nodes"),           
+            preferred_nodes=data.get("prefered_nodes"),           
         )
+        if job_id:
+
+            reservation_thread = threading.Thread(target=reservation_monitor, daemon=True)
+            reservation_thread.start()
+            print("[OK] Reservation monitor started....")
+
+        
         return jsonify({"job_id": job_id})
     except Exception as e:
         return jsonify({
-            "success": False, 
-            "error": str(e)
+            "success": False,
+            "retry_allowed": True,
+
+            "error": {e}
         }), 400
     
     

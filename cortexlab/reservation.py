@@ -15,10 +15,13 @@ def walltime_to_seconds(walltime):
 
 # Submit OAR job
 
-def reserve_nodes(username, reservation_type, walltime, future=False, reservation_time = None, node_count=None, preferred_nodes=None, script=None):
+def reserve_nodes(hostname, username, reservation_type, walltime, future=False, reservation_time = None, preferred_nodes=None, script=None):
 
     
     print("\n======= Submitting OAR Job =======")
+    config.USERNAME = username
+    config.HOSTNAME = hostname
+
     remote = cortexlab_Remote()
 
     try:
@@ -36,6 +39,7 @@ def reserve_nodes(username, reservation_type, walltime, future=False, reservatio
 
     # PREFERRED Alocation
     elif reservation_type == "preferred":
+        node_count = len(preferred_nodes)
         if not node_count:
                     raise ValueError("node_count required")
                     print("Invalid input. Please enter a positive and valid node number (1-40).")
@@ -101,18 +105,10 @@ def reserve_nodes(username, reservation_type, walltime, future=False, reservatio
 
     #Failure case
     if job_id < 0:
-        print("\n OAR REQUES FAILED")
-        print("Reason from system:\n")
-        print(submit_output)
-        while True:
-            option = input("\nOption: retry / cancel: ").lower()
-            if option == "retry":
-                return reserve_nodes(remote)
-            elif option == "cancel":
-                raise RuntimeError("Reservation Cancelled")
-            else:
-                print("\nInvalid input")
-    
+        raise RuntimeError(
+            f"OAR request failed:\n{submit_output}"
+    )
+
     print(f"\nJob ID: {job_id}")
 
     #store initial data in registry

@@ -227,7 +227,10 @@ function toggleFutureSection(){
 }
 async function submitReservation() {
     const preferredNodes = document.getElementById("preferredNodes").value.split(",").filter(x => x.trim() != "").map(x => parseInt(x.trim()));
-    const payload = {username: document.getElementById("username").value, hostname: document.getElementById("hostname").value,
+    const payload = 
+    {   
+        username: document.getElementById("username").value, 
+        hostname: document.getElementById("hostname").value,
         reservation_type: document.getElementById("reservationType").value,
         walltime: document.getElementById("walltime").value,
         future: document.getElementById("futureReservation").checked,
@@ -243,6 +246,11 @@ async function submitReservation() {
         }
         else{
             document.getElementById("reservationStatus").innerText = data.error;
+            if (data.retry_allowed){
+                if (confirm("Reservation failed. Retry")){
+                    submitReservation()
+                }
+            }
         }
 
     }

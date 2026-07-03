@@ -1,10 +1,16 @@
 import paramiko
-
+import config
 class cortexlab_Remote:
-    def __init__(self, hostname, username):
+    def __init__(self):
         self.ssh = paramiko.SSHClient()
+        username = config.USERNAME
+        hostname = config.HOSTNAME
+        key = paramiko.Ed25519Key.from_private_key_file(r"C:\Users\maity\.ssh\id_ed25519")
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect(hostname=hostname, username=username)
+        print(hostname)
+        print(username)
+    
+        self.ssh.connect(hostname=hostname, username=username, pkey=key)
 
     def run(self, command):
             stdin, stdout, stderr = self.ssh.exec_command(command)
