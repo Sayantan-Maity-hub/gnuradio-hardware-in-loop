@@ -3,7 +3,7 @@ import time
 
 reservation_registry = {}
 lock = threading.Lock()
-def create_reservation(job_id, username, reserevation_type, walltime, future=False, reservation_time=None, requested_nodes=None, requested_count=None, script=None, command=None):
+def create_reservation(job_id, username, reservation_type, walltime, future=False, reservation_time=None, requested_nodes=None, requested_count=None, script=None, command=None):
 
     with lock:
         reservation_registry[job_id] = {
@@ -11,7 +11,7 @@ def create_reservation(job_id, username, reserevation_type, walltime, future=Fal
             "job_id": job_id,
             "state": "SUBMITTED",
             "walltime": walltime,
-            "reservation_Type": reserevation_type,
+            "reservation_Type": reservation_type,
             "future": future,
             "reservation_time": reservation_time,
             "requested_nodes": requested_nodes or [],

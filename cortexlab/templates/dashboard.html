@@ -242,7 +242,7 @@ async function submitReservation() {
     try{
         const response = await fetch("http://127.0.0.1:5678/reservation/create", {method: "POST", headers:{"Content-Type": "application/json"}, body:JSON.stringify(payload)});
         const data = await response.json();
-        if (data.success){
+        if (data.su){
             document.getElementById("reservationStatus").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
         }
         else{
@@ -263,7 +263,7 @@ async function submitReservation() {
 }
 async function updateReservations() {
     try {
-        const response = await fetech("http://127.0.0.1:5678/status/reservations");
+        const response = await fetch("http://127.0.0.1:5678/status/reservations");
         const reservations = await response.json()
         const list = document.getElementById("reservationList");
         list.innerHTML = "";
@@ -274,8 +274,8 @@ async function updateReservations() {
             <div class = "reservation-card">
                 <h3> Reservation ${res.job_id}</h3>
                 <p><b>State:</b> ${res.state}</p>
-                <p><b>Nodes:</b> ${assigned_nodes}</p>
-                <p><b>Walltime:</b> ${walltime}</p>
+                <p><b>Nodes:</b> ${res.assigned_nodes}</p>
+                <p><b>Walltime:</b> ${res.walltime}</p>
 
                 <p><b>Task ID:</b>
                     ${res.task_id || "Not Created"}

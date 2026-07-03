@@ -4,6 +4,7 @@ from registry import get_nodes, get_node
 from reservation import reserve_nodes
 from reservation_monitor import reservation_monitor
 from scenario_generator import generate_scenario
+from reservation_registry import get_all_reservation
 from job_runner import run_job
 import threading
 import json
@@ -29,25 +30,25 @@ def create_reserve():
             walltime = data["walltime"],
             future = data["future"],
             reservation_time = data.get("reservatoion_time"),
-            preferred_nodes=data.get("prefered_nodes"),           
+            preferred_nodes=data.get("preferred_nodes", []),           
         )
-        if job_id:
-
-            reservation_thread = threading.Thread(target=reservation_monitor, daemon=True)
-            reservation_thread.start()
-            print("[OK] Reservation monitor started....")
-
-        
-        return jsonify({"job_id": job_id})
+        return jsonify({
+            "job_id": job_id
+            
+            })
     except Exception as e:
         return jsonify({
             "success": False,
             "retry_allowed": True,
 
-            "error": {e}
+            "error": str(e)
         }), 400
+
+@app.route("/status/reservations")
+def reservation_status():
+    return jsonify(list(get_all_reservation().values()))
     
-@app.route("/scenerio/generate", method=["POST"])
+@app.route("/scenerio/generate", methods=["POST"])
 def scenario_generation():
     data = request.json()
 
@@ -59,7 +60,7 @@ def scenario_generation():
 
     )
 
-    
+
     
     
 

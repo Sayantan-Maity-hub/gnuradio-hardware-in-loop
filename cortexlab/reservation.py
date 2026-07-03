@@ -33,12 +33,13 @@ def reserve_nodes(hostname, username, reservation_type, walltime, future=False, 
     
     #BEST Allocation
     if reservation_type == "best":
-        resource = f"node=BEST, walltime={walltime}"
+        resource = f"nodes=BEST,walltime={walltime}"
         requested_nodes = []
     
 
     # PREFERRED Alocation
     elif reservation_type == "preferred":
+        print(preferred_nodes)
         node_count = len(preferred_nodes)
         if not node_count:
                     raise ValueError("node_count required")
@@ -51,10 +52,10 @@ def reserve_nodes(hostname, username, reservation_type, walltime, future=False, 
                     f"Valid nodes: {VALID_NODES}"
                 )
                 print("Invalid input. Please enter a valid integer.")
-        nodes_numbers = []
+
         full_nodes = [
             f"mnode{n}.cortexlab.fr"
-            for n in nodes_numbers
+            for n in preferred_nodes
         ]
 
         node_string = "', '".join(
@@ -83,7 +84,7 @@ def reserve_nodes(hostname, username, reservation_type, walltime, future=False, 
          except ValueError:
               raise ValueError("reservation_time must be YYYY-MM-DD HH:MM:SS")
          cmd += (f'-r "res{reservation_time}" ')
-    cmd+= f'"sleep {sleep_time}"'
+    cmd+= f' "sleep {sleep_time}"'
 
     print("\nGenerate OAR Command:\n")
     print(cmd)
@@ -116,11 +117,10 @@ def reserve_nodes(hostname, username, reservation_type, walltime, future=False, 
          job_id = job_id,
          username=username,
          reservation_type = reservation_type,
-         wallttime = walltime,
+         walltime = walltime,
          future = future,
          reservation_time = reservation_time,
-         requested_nodes = requested_nodes,
-         requested_node_no = node_count,
+         requested_nodes = preferred_nodes,
          script=script,
          command = cmd
         )
