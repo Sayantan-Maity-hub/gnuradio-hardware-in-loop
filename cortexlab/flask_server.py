@@ -3,8 +3,9 @@ from flask_cors import CORS
 from registry import get_nodes, get_node
 from reservation import reserve_nodes
 from reservation_monitor import reservation_monitor
-from scenario_generator import generate_scenario
-from reservation_registry import get_all_reservation
+from scenario_generator import generate_scenario, minus_create_task, minus_submit_task
+from cortexlab_remote import cortexlab_Remote
+from reservation_registry import get_all_reservation, get_reservation
 from job_runner import run_job
 import threading
 import json
@@ -48,21 +49,32 @@ def create_reserve():
 @app.route("/status/reservations")
 def reservation_status():
     return jsonify(list(get_all_reservation().values()))
-    
-@app.route("/scenerio/generate", methods=["POST"])
-def scenario_generation():
-    data = request.json()
 
-    generate_scenario(
-        job_id= data["job_id"],
-        nodes=data["nodes"],
-        walltime=data["walltime"],
-        description=["description"]
+@app.route("/task/create", methods=["POST"])
+def create_task():
 
-    )
+    data = request.get_json()
+
+    job_id = data.get("job_id")
+    nodes = get_reservation(job_id)["nodes"]
+    task_description = data.get("task_description", "")
+    walltime = get_reservation(job_id)["walltime"]
 
 
-    
+    get_reservation(job_id, nodes, walltime, task_description)
+    remote = cortexlab_Remote()
+    local_folder = str(job_id)
+    remote_folder = str(job_id)
+    remote.upload_folder(local_folder, remote_folder)
+    minus_create_task(remote, remote_folder)
+    task_id = minus_submit_task(remote, remote_folder)
+
+    return jsonify({
+        "success": True,
+        "task_id": task_id
+    })
+
+
     
 
 
