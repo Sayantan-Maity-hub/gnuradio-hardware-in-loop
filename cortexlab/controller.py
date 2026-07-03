@@ -14,6 +14,7 @@ def main():
     print("http://localhost:5678/status/nodes")
 
 
+    
     '''
 
     #Node state monitor thread

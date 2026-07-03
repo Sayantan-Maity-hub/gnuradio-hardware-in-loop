@@ -215,6 +215,7 @@
 
 <script>
 const NODE_API = "http://127.0.0.1:5678/status/nodes";
+const taskInputs = {};
 
 function toggleReservationFields(){
     const type = document.getElementById("reservationType").value;
@@ -242,8 +243,9 @@ async function submitReservation() {
     try{
         const response = await fetch("http://127.0.0.1:5678/reservation/create", {method: "POST", headers:{"Content-Type": "application/json"}, body:JSON.stringify(payload)});
         const data = await response.json();
-        if (data.su){
+        if (data.success){
             document.getElementById("reservationStatus").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
+            updateReservations();
         }
         else{
             document.getElementById("reservationStatus").innerText = data.error;
@@ -262,6 +264,7 @@ async function submitReservation() {
 
 }
 async function updateReservations() {
+
     try {
         const response = await fetch("http://127.0.0.1:5678/status/reservations");
         const reservations = await response.json()
@@ -270,20 +273,59 @@ async function updateReservations() {
         for (const res of reservations){
             res.assigned_nodes.length > 0 ? res.assigned_nodes.join(", ") : "Waiting allocation";
 
-            list.innerHTML +=`
-            <div class = "reservation-card">
-                <h3> Reservation ${res.job_id}</h3>
-                <p><b>State:</b> ${res.state}</p>
-                <p><b>Nodes:</b> ${res.assigned_nodes}</p>
-                <p><b>Walltime:</b> ${res.walltime}</p>
+            list.innerHTML += `
+<div class="reservation-card" style="
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+">
 
-                <p><b>Task ID:</b>
-                    ${res.task_id || "Not Created"}
-                </p>
-                <input id="task-desc-${res.job_id}" placeholder = "Task description">
-                <button onclick = "createTask('${res.job_id}')">Create Task</button>
-            </div>
-            `;
+    <div style="flex:1;">
+        <h3>Reservation ${res.job_id}</h3>
+
+        <p><b>State:</b> ${res.state}</p>
+
+        <p><b>Nodes:</b>
+            ${
+                res.assigned_nodes.length > 0
+                ? res.assigned_nodes.join(", ")
+                : "Waiting allocation"
+            }
+        </p>
+
+        <p><b>Walltime:</b> ${res.walltime}</p>
+        <input
+    id="task-desc-${res.job_id}"
+    placeholder="Task description"
+    value="${taskInputs[`task-desc-${res.job_id}`] || ""}">
+
+        <button onclick="createTask('${res.job_id}')">
+            Create Task
+        </button>
+    </div>
+
+    <div style="
+        flex:1;
+        border-left:1px solid #e5e7eb;
+        padding-left:20px;
+    ">
+        <h4>Task</h4>
+
+        <p>
+            <b>Task ID:</b>
+            ${res.task_id || "Not Created"}
+        </p>
+
+        <p>
+            <b>Task Status:</b>
+            ${res.task_state || "Not Started"}
+        </p>
+
+        
+    </div>
+
+</div>
+`;
         }
         if (reservations.length === 0){
             list.innerHTML = "No reservations yet.";
@@ -291,10 +333,13 @@ async function updateReservations() {
 
     }
     catch(err){
-        document.getElementById("reservationList").innerHTML= "Failed to load reservations.";
+    console.error(err);
 
+    document.getElementById("reservationList").innerHTML =
+        "Failed to load reservations.";
     }
 }
+
 async function updateNodes() {
     try {
         const response = await fetch(NODE_API);
@@ -367,7 +412,6 @@ function startJob(){
 
 }
 async function watchJob(node) {
-    const timer = setInterval(async () => {
         const res = await fetch(`http://127.0.0.1:5678/status/job/${node}`);
         const job = await res.json();
 
@@ -381,15 +425,12 @@ async function watchJob(node) {
             document.getElementById("jobStatus").innerText=`${node} --> FINISHED | Result: ${result}`;
             console.log("Steps:", job.step);
         }
-    }, 2000);
+    };
     
-}
 
-updateNodes();
-loadNodesIntoDropdown();
 updateReservations();
 
-setInterval(() => {updateNodes(); loadNodesIntoDropdown();}, 2000);
+setInterval(() => {updateReservations()}, 2000);
 </script>
 
 </body>
