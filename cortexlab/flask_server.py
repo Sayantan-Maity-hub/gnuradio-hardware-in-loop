@@ -3,6 +3,7 @@ from flask_cors import CORS
 from registry import get_nodes, get_node
 from reservation import reserve_nodes, walltime_to_seconds
 from reservation_monitor import reservation_monitor
+from minus_task_monitor import minus_task_monitor
 from scenario_generator import generate_scenario, minus_create_task, minus_submit_task
 from cortexlab_remote import cortexlab_Remote
 from reservation_registry import get_all_reservation, get_reservation, update_reservation
@@ -35,7 +36,9 @@ def create_reserve():
             reservation_time = data.get("reservatoion_time"),
             preferred_nodes=data.get("preferred_nodes", []),           
         )
-        reservation_monitor();
+        #start threading for monitoring reservation.
+        threading.Thread(target=reservation_monitor, args=(job_id,), daemon=True).start()
+    
         return jsonify({
             "job_id": job_id
             
@@ -66,7 +69,9 @@ def create_task():
             "success": False,
             "message": "job_id missing"
         })
+    
     reservation = get_reservation(job_id)
+    
     if reservation is None:
         return jsonify({
             "success": False,
@@ -92,6 +97,9 @@ def create_task():
     remote.upload_folder(scenario_folder, remote_folder)
     minus_create_task(remote, remote_folder)
     task_id = minus_submit_task(remote, remote_folder)
+
+    #starting thread for monitor task.
+    threading.Thread(target=minus_task_monitor, args=(job_id, task_id), daemon=True).start()
 
     task_entry = {
         "task_id": task_id,
@@ -119,8 +127,6 @@ def status_task(job_id, task_id):
         "success": True,
         "task_status": status
     })
-
-    
 
 
 @app.route("/status/nodes")

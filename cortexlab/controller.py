@@ -13,7 +13,6 @@ def main():
     print("Flask API available at:")
     print("http://localhost:5678/status/nodes")
 
-
     
     '''
 

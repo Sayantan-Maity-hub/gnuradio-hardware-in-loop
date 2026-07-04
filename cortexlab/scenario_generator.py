@@ -2,7 +2,7 @@ import yaml
 import time
 import os
 import cortexlab_remote
-from reservation_registry import update_reservation
+from reservation_registry import update_reservation, get_reservation
 
 def generate_scenario(scenario_folder, nodes, duration, task_description):
 
@@ -47,23 +47,35 @@ def minus_submit_task(remote, remote_folder):
 
 
 
-def wait_for_task_running(remote, job_id, task_id):
-    print(f"Waiting for task {task_id} to start...")
+def update_task_status(remote, job_id, task_id):
+    print(f"update the task status...")
 
-    while True:
-        output = remote.run(f"minus task info {task_id}")
+    output = remote.run(f"minus task info {task_id}")
+    print(output)
+    if "state=RUNNING" in output:
+        state = "RUNNING"
 
-        if "state=RUNNING" in output:
-            print("Task is RUNNING at nodes are ready")
-            update_reservation(job_id, task_state = "RUNNING")
+    elif "state=FINISHED"  in output:
+        state = "FINISHED"
 
-            return
+    elif "state=ERROR" in output:
+        state = "ERROR"
 
-        if "state=ERROR" in output or "aborted=True" in output:
-            print(output)
-            raise Exception("Task failed")
+    elif "state=WAITING"in output:
+        state = "WAITING"
+    
+    else:
+        state = "UNKNOWN"
 
-        print("Still waiting...")
-        time.sleep(5)
+    reservation = get_reservation(job_id)
+
+    for task in reservation["tasks"]:
+        if task["task_id"] == task_id:
+            task["state"] = state
+            break
+    
+    update_reservation(job_id, tasks=reservation["tasks"])
+
+    return state
 
 
