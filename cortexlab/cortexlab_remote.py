@@ -1,5 +1,6 @@
 import paramiko
 import config
+import os
 class cortexlab_Remote:
     def __init__(self):
         self.ssh = paramiko.SSHClient()
@@ -24,11 +25,23 @@ class cortexlab_Remote:
         
     def upload_folder(self, local_folder, remote_folder):
             sftp = self.ssh.open_sftp()
+            parent_folder = remote_folder.split("/")[0]
+
             try:
-                sftp.mkdir(remote_folder)
+                sftp.mkdir(parent_folder)
             except:
                 pass
-            sftp.put(f"{local_folder}/scenario.yaml", f"{remote_folder}/scenario.yaml")
+            try:
+                 sftp.mkdir(remote_folder)
+            except:
+                 pass
+            
+            for filename in os.listdir(local_folder):
+                local_path = os.path.join(local_folder, filename)
+                remote_path = f"{remote_folder}/{filename}"
+
+                if os.path.isfile(local_path):
+                     sftp.put(local_path, remote_path)
             sftp.close()
         
     def close(self):

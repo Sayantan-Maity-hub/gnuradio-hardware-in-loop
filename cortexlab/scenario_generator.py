@@ -4,10 +4,11 @@ import os
 import cortexlab_remote
 from reservation_registry import update_reservation
 
-def generate_scenario(job_id, nodes, walltime, description):
+def generate_scenario(scenario_folder, nodes, duration, task_description):
+
     scenario = {
-        "description": f"{description}",
-        "duration": walltime,
+        "description": f"{task_description}",
+        "duration": duration,
         "nodes": {}
 
     }
@@ -26,21 +27,21 @@ def generate_scenario(job_id, nodes, walltime, description):
             ]
         }
 
-    os.makedirs(f"cortexlab/{job_id}", exist_ok=True)
+    os.makedirs(scenario_folder, exist_ok=True)
 
-    with open(f"cortexlab/{job_id}/scenario.yaml","w") as f:
+    with open(os.path.join(scenario_folder, "scenario.yaml"), "w") as f:
         yaml.dump(scenario, f, sort_keys=False)
         print("Scenario generation successfull")
 
 
 
-def minus_create_task(remote, folder_path):
-    output = remote.run(f"minus task create -f {folder_path}")
+def minus_create_task(remote, remote_folder):
+    output = remote.run(f"minus task create -f {remote_folder}")
     print (output)
 
 
-def minus_submit_task(remote, folder_path):
-    output = remote.run(f"minus task submit {folder_path}.task")
+def minus_submit_task(remote, remote_folder):
+    output = remote.run(f"minus task submit {remote_folder}.task")
     print(f"taskId: {output}")
     return output
 

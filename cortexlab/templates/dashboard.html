@@ -321,16 +321,36 @@ async function updateReservations() {
     ">
         <h4>Task</h4>
 
-        <p>
-            <b>Task ID:</b>
-            ${res.task_id || "Not Created"}
-        </p>
+        ${
+    res.tasks && res.tasks.length > 0
+    ?
+    res.tasks.map(task => `
+        <div style="
+            border:1px solid #ddd;
+            padding:10px;
+            margin-bottom:10px;
+            border-radius:10px;
+        ">
+            <p><b>Description:</b>
+                ${task.description}
+            </p>
 
-        <p>
-            <b>Task Status:</b>
-            ${res.task_state || "Not Started"}
-        </p>
+            <p><b>Task ID:</b>
+                ${task.task_id}
+            </p>
 
+            <p><b>Status:</b>
+                ${task.state}
+            </p>
+
+            <p><b>Folder:</b>
+                ${task.folder}
+            </p>
+        </div>
+    `).join("")
+    :
+    "No tasks created"
+}
         
     </div>
 

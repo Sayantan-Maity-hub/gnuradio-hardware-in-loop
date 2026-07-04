@@ -1,7 +1,7 @@
 from flask import Flask, Response, render_template, request, jsonify
 from flask_cors import CORS
 from registry import get_nodes, get_node
-from reservation import reserve_nodes
+from reservation import reserve_nodes, walltime_to_seconds
 from reservation_monitor import reservation_monitor
 from scenario_generator import generate_scenario, minus_create_task, minus_submit_task
 from cortexlab_remote import cortexlab_Remote
@@ -9,6 +9,8 @@ from reservation_registry import get_all_reservation, get_reservation, update_re
 from job_runner import run_job
 import threading
 import json
+import os
+import re
 
 
 app = Flask(__name__)
@@ -65,40 +67,58 @@ def create_task():
             "message": "job_id missing"
         })
     reservation = get_reservation(job_id)
-    print("Reservation:", reservation)
-
-    
-    
-    task_description = data.get("task_description", "")
-    print("Received data:", data)
-    print("Job ID:", job_id)
-
     if reservation is None:
         return jsonify({
             "success": False,
             "message": f"Reservation {job_id} not found or has already finished."
         }),     404
 
-    
-    nodes = reservation["assigned_nodes"]
-    
-    walltime = reservation["walltime"]
+    print("Reservation:", reservation)
 
+    
+    
+    task_description = data.get("task_description", "")
+    safe_desc = re.sub(r'[^a-zA-Z0-9_-]', '_', task_description.strip())
+    scenario_folder = os.path.join(str(job_id), safe_desc)
+    remote_folder = f"{job_id}/{safe_desc}"
+    
+    nodes = reservation["assigned_nodes"]  
+    duration = walltime_to_seconds(reservation["walltime"])
+    
 
-    generate_scenario(job_id, nodes, walltime, task_description)
+    generate_scenario(scenario_folder, nodes, duration, task_description)
     remote = cortexlab_Remote()
-    local_folder = str(f"cortexlab/{job_id}")
-    remote_folder = str(job_id)
-    remote.upload_folder(local_folder, remote_folder)
+    
+    remote.upload_folder(scenario_folder, remote_folder)
     minus_create_task(remote, remote_folder)
     task_id = minus_submit_task(remote, remote_folder)
-    update_reservation(job_id=job_id, task_id=task_id)
+
+    task_entry = {
+        "task_id": task_id,
+        "description": task_description,
+        "state": "SUBMITTED",
+        "folder": remote_folder
+    }
+
+    reservation["tasks"].append(task_entry)
+
+    update_reservation(job_id=job_id, tasks=reservation["tasks"])
+
+
 
     return jsonify({
         "success": True,
         "task_id": task_id
     })
 
+@app.route("/status/task")
+def status_task(job_id, task_id):
+    data = get_reservation(job_id)
+    status = data["task_status"]
+    return jsonify({
+        "success": True,
+        "task_status": status
+    })
 
     
 
