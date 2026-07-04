@@ -15,6 +15,8 @@ def reservation_monitor():
 
                 state_match = re.search(r"state\s*=\s*(\w+)", job_info)
                 state = (state_match.group(1) if state_match else "UNKNOWN")
+                if state.lower() in ["terminated", "error", "finishing"]:
+                    update_reservation(job_id, state = "Finished")
 
                 update_reservation(job_id, state = state)
 
@@ -44,8 +46,7 @@ def reservation_monitor():
                             clean_nodes.append(short)
                         update_reservation(job_id, assigned_nodes=clean_nodes)
                     
-                if state in ["Terminated", "Error", "Finishing"]:
-                    update_reservation(job_id, finished = True)
+                
             except Exception as e:
                 print(f"Resevation monitor error for {job_id}: {e}")
         time.sleep(5)

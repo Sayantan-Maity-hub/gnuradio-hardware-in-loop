@@ -21,7 +21,9 @@ def create_reservation(job_id, username, reservation_type, walltime, future=Fals
             "waiting_time": None,
             "scenario_generate": False,
             "scenatio_upload": False,
-            "task": [],
+            "task_id": None,
+            "task_state": None,
+            
 
             "created_at": time.time(),
             "last_update": time.time()

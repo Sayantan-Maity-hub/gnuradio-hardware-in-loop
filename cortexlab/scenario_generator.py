@@ -2,6 +2,7 @@ import yaml
 import time
 import os
 import cortexlab_remote
+from reservation_registry import update_reservation
 
 def generate_scenario(job_id, nodes, walltime, description):
     scenario = {
@@ -29,6 +30,7 @@ def generate_scenario(job_id, nodes, walltime, description):
 
     with open(f"cortexlab/{job_id}/scenario.yaml","w") as f:
         yaml.dump(scenario, f, sort_keys=False)
+        print("Scenario generation successfull")
 
 
 
@@ -44,14 +46,15 @@ def minus_submit_task(remote, folder_path):
 
 
 
-def wait_for_task_running(remote, task_id):
+def wait_for_task_running(remote, job_id, task_id):
     print(f"Waiting for task {task_id} to start...")
 
     while True:
         output = remote.run(f"minus task info {task_id}")
 
         if "state=RUNNING" in output:
-            print("Task is RUNNING â†’ nodes are ready")
+            print("Task is RUNNING at nodes are ready")
+            update_reservation(job_id, task_state = "RUNNING")
 
             return
 
