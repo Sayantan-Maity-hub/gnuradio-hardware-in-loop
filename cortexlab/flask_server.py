@@ -4,6 +4,7 @@ from registry import get_nodes, get_node
 from reservation import reserve_nodes, walltime_to_seconds
 from reservation_monitor import reservation_monitor
 from minus_task_monitor import minus_task_monitor
+from monitor_nodes import monitor_nodes
 from scenario_generator import generate_scenario, minus_create_task, minus_submit_task
 from cortexlab_remote import cortexlab_Remote
 from reservation_registry import get_all_reservation, get_reservation, update_reservation
@@ -128,10 +129,28 @@ def status_task(job_id, task_id):
         "task_status": status
     })
 
-
+node_monitor_thread = None
 @app.route("/status/nodes")
 def status_nodes():
-    return Response(json.dumps(get_nodes(), indent = 4), mimetype="application/json")
+    #Node state monitor thread
+    global node_monitor_thread
+    reservations = get_all_reservation()
+    start_monitor = False
+    for reservation in reservations.values():
+
+        for task in reservation.get("tasks", []):
+
+            if task["state"] == "RUNNING":
+                nodes = reservation["assigned_nodes"]
+                start_monitor = True
+                break
+    if start_monitor:
+        if node_monitor_thread is None or not node_monitor_thread.is_alive():
+            node_monitor_thread = threading.Thread(target=monitor_nodes, args=(nodes, 5), daemon=True)
+            node_monitor_thread.start()
+            print("node monitor started().") 
+                
+    return jsonify(get_nodes())
 
 @app.route("/control/job/start", methods = ["POST"])
 def start_job():

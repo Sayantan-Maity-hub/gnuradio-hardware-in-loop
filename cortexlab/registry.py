@@ -2,6 +2,7 @@ import threading
 registry = {}
 lock = threading.Lock()
 def update_node(node, data):
+    
     with lock:
         existing_job = registry.get(node, {}).get("job",
                                                   {
@@ -41,6 +42,7 @@ def update_job(node, name = None, state = None, steps = None):
           }
     
 def get_nodes():
+    print(dict(registry))
     with lock:
         return dict(registry)
 

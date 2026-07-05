@@ -5,6 +5,7 @@ from ssh_client import SSHConnection
 
 
 def monitor_nodes(nodes, interval=30):
+    print(f"monitor nodes: {nodes}")
     connections = {}
     for node in nodes:
         try:

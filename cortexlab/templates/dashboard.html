@@ -418,14 +418,28 @@ async function updateNodes() {
         for (const [node, info] of Object.entries(data)){
             const statusClass = info.status === "ONLINE" ? "online" : "offline";
             container.innerHTML += `
-                <div class="card">
-                    <h3>${node}</h3>
-                    <p><b>Hostname:</b> ${info.hostname}</p>
-                    <p><b>Status:</b> <span class = "${statusClass}">${info.status}</span></p>
-                    <p><b>OS:</b> ${info.os || "N/A"}</p>
-                    <p><b>Job:</b> ${info.job?.state || "IDLE"}</p>
-                </div>
-            `;    
+<div class="card">
+    <h3>${node}</h3>
+
+    <p><b>Hostname:</b> ${info.hostname}</p>
+
+    <p>
+        <b>Status:</b>
+        <span class="${statusClass}">
+            ${info.status}
+        </span>
+    </p>
+
+    <hr>
+
+    <h4>Running Job</h4>
+
+    <p><b>Name:</b> ${info.job?.name || "None"}</p>
+
+    <p><b>State:</b> ${info.job?.state || "IDLE"}</p>
+
+</div>
+`; 
         }
     
     }
@@ -497,8 +511,12 @@ async function watchJob(node) {
     
 
 updateReservations();
+updateNodes();
 
-setInterval(() => {updateReservations()}, 2000);
+setInterval(() => {
+    updateReservations();
+    updateNodes();
+}, 2000);
 </script>
 
 </body>
