@@ -4,20 +4,14 @@ lock = threading.Lock()
 def update_node(node, data):
     
     with lock:
-        existing_job = registry.get(node, {}).get("job",
-                                                  {
-                                                       "name":None,
-                                                       "state":None,
-                                                       "step": []
-                                                  }
-                                                )
+        existing_job = registry.get(node, {}).get("job", {})
         os_data = data.get("os", "")
         pretty = None
         if isinstance(os_data, str):
-                    for line in os_data.splitlines():
-                         if line.startswith("PRETTY_NAME="):
-                              pretty = line.split("=", 1)[1].strip('"')
-                              break
+               for line in os_data.splitlines():
+                    if line.startswith("PRETTY_NAME="):
+                         pretty = line.split("=", 1)[1].strip('"')
+                         break
 
         registry[node]={
             "hostname": data.get("hostname", node),
@@ -25,7 +19,7 @@ def update_node(node, data):
             "os": pretty,
             "job": existing_job
         }
-def update_job(node, job_id = None,  task_id=None, description=None, folder=None, script = None, state = None):
+def update_job(node, **kwargs):
      with lock:
           if node not in registry:
                registry[node] = {
@@ -34,17 +28,15 @@ def update_job(node, job_id = None,  task_id=None, description=None, folder=None
                     "os": None,
                     "job": {}
                }
-          registry[node]["job"] = {
-               "job_id": job_id,
-               "task_id": task_id,
-               "description": description,
-               "folder": folder,
-               "script": script,
-               "state": state,
-          }
+          job = registry[node].setdefault("job", {})
+          for key, value in kwargs.items():
+               if value is not None:
+                    job[key] = value
 def clear_job(node):
-     update_job(node = node, Job_id=None, task_id=None, description=None, folder=None, script= None, state=None)
-
+     with lock:
+          if node is registry:
+               registry[node]["job"] = {}
+               
 def get_nodes():
     with lock:
         return dict(registry)

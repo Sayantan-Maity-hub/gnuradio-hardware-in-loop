@@ -22,28 +22,40 @@ class cortexlab_Remote:
                 print(error)
             
             return output
-        
-    def upload_folder(self, local_folder, remote_folder):
-            sftp = self.ssh.open_sftp()
-            parent_folder = remote_folder.split("/")[0]
-
-            try:
-                sftp.mkdir(parent_folder)
-            except:
-                pass
-            try:
-                 sftp.mkdir(remote_folder)
-            except:
-                 pass
             
-            for filename in os.listdir(local_folder):
-                local_path = os.path.join(local_folder, filename)
-                remote_path = f"{remote_folder}/{filename}"
-
-                if os.path.isfile(local_path):
-                     sftp.put(local_path, remote_path)
-            sftp.close()
         
-    def close(self):
-            self.ssh.close()
+    def upload_folder(self, local_path, remote_folder):
+            print(local_path)
+            print(remote_folder)
+            self.run(f"mkdir -p '{remote_folder}'")
+            sftp = self.ssh.open_sftp()
+            
+            if os.path.isfile(local_path):
+                 filename = os.path.basename(local_path)
+                 remote_path = f"{remote_folder}/{filename}"
+                 print("Uploading:", local_path, "-->", remote_path)
+                 sftp.put(local_path, remote_path)
+            else:
+                 for filename in os.listdir(local_path):
 
+                    local_file = os.path.join(local_path, filename)
+
+                    print("LOCAL:", local_file)
+                    print("IS FILE:", os.path.isfile(local_file))
+
+                    if os.path.isfile(local_file):
+
+                        remote_file = f"{remote_folder}/{filename}"
+
+                        print(f"Uploading: {local_file}  {remote_file}")
+
+                        try:
+                            sftp.put(local_file, remote_file)
+                            print("SUCCESS")
+                        except Exception as e:
+                            print("UPLOAD ERROR:", e)
+            print(self.run(f"ls -l '{remote_folder}'"))
+            sftp.close()
+            
+    def close(self):
+        self.ssh.close()

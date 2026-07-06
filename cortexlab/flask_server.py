@@ -1,6 +1,6 @@
 from flask import Flask, Response, render_template, request, jsonify
 from flask_cors import CORS
-from node_registry import get_nodes, get_node
+from node_registry import get_nodes, get_node, update_job
 from reservation import reserve_nodes, walltime_to_seconds
 from reservation_monitor import reservation_monitor
 from minus_task_monitor import minus_task_monitor
@@ -85,17 +85,17 @@ def create_task():
     
     task_description = data.get("task_description", "")
     safe_desc = re.sub(r'[^a-zA-Z0-9_-]', '_', task_description.strip())
-    scenario_folder = os.path.join(str(job_id), safe_desc)
+    local_folder = os.path.join(str(job_id), safe_desc)
     remote_folder = f"{job_id}/{safe_desc}"
     
     nodes = reservation["assigned_nodes"]  
     duration = walltime_to_seconds(reservation["walltime"])
     
 
-    generate_scenario(scenario_folder, nodes, duration, task_description)
+    generate_scenario(local_folder, nodes, duration, task_description)
     remote = cortexlab_Remote()
     
-    remote.upload_folder(scenario_folder, remote_folder)
+    remote.upload_folder(local_folder, remote_folder)
     minus_create_task(remote, remote_folder)
     task_id = minus_submit_task(remote, remote_folder)
 
@@ -157,6 +157,7 @@ def upload_script():
 
     node = request.form["node"]
     file = request.files["script"]
+    update_job(node=node, script = file.filename)
 
     os.makedirs("uploads", exist_ok=True)
 
@@ -169,12 +170,14 @@ def upload_script():
     task_folder = job["folder"]
 
     remote_folder = f"{task_folder}/{node}"
-    remote_path = f"{remote_folder}/{file.filename}"
-
+    
     remote = cortexlab_Remote()
 
-    remote.mkdir_p(remote_folder)          # create if not exists
-    remote.upload_file(local_path, remote_path)
+    remote.upload_folder(local_path, remote_folder)
+    remote.close()
+
+    remote_path = f"{remote_folder}/{file.filename}"
+
 
     remote.close()
 
