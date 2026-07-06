@@ -38,28 +38,19 @@ class SSHConnection:
             if not any(p in clean_err for p in ignore_patterns):
 
                 raise Exception(err)
-        return out
+        return out, err
 
     def get_node_info(self):
 
-        hostname = self.run_on_node("hostname")
-        os_info = self.run_on_node("cat /etc/os-release")
+        hostname, _  = self.run_on_node("hostname")
+        os_info, _ = self.run_on_node("cat /etc/os-release")
 
         return {
             "status": "ONLINE",
             "hostname": hostname.strip(),
             "os": os_info
         }
-    def upload_file(self, local_path, filename):
-        remote_path = f"{self.base_path}/{filename}"
-        print(f"Uploading to shared filesystem: {remote_path}")
-        
-        stfp = self.gateway.open_sftp()
-        stfp.put(local_path, remote_path)
-        stfp.close()
-        print(f"file upload complete...")
 
-        return remote_path
     
     
     def close(self):
