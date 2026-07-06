@@ -539,29 +539,19 @@ async function uploadScript(node) {
     alert(data.message);
 }
 
-function startJob(){
-    const node = document.getElementById("nodeSelect").value;
-    const script = document.getElementById("script").value;
-
-    fetch("http://127.0.0.1:5678/control/job/start", {
+async function runScript(node) {
+    
+    const response = await fetch("http://127.0.0.1:5678/script/run", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            node: node,
-            script: script
+            node: node
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("jobStatus").innerText= "Job started on " + data.node;
-        watchJob(data.node);
-    })
-    .catch(() => {
-        document.getElementById("jobStatus").innerText= "Failed to start job";
     });
-
+    const data = await response.json();
+    alert(data.message);
 }
 async function watchJob(node) {
         const res = await fetch(`http://127.0.0.1:5678/status/job/${node}`);
