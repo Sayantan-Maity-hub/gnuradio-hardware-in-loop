@@ -117,6 +117,17 @@
             border-collapse: collapse;
 
         }
+        .node-btn{
+        padding:8px 14px;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+        margin-right:10px;
+        }
+
+        .node-btn:last-child{
+        margin-right:0;
+        }
         .task-table th,
         .task-table tb{
             padding: 12px;
@@ -414,61 +425,120 @@ async function updateNodes() {
         const data = await response.json();
 
         const container = document.getElementById("nodes")
-        container.innerHTML = ""
+        
         for (const [node, info] of Object.entries(data)){
             const statusClass = info.status === "ONLINE" ? "online" : "offline";
-            container.innerHTML += `
-<div class="card">
-    <h3>${node}</h3>
+            let card = document.getElementById(`card-${node}`);
 
-    <p><b>Hostname:</b> ${info.hostname}</p>
+            if (!card){
+                card = document.createElement("div");
+                card.className = "card";
+                card.id = `card-${node}`;
+                card.innerHTML += `
+                <div class="card">
+                    <h3>${node}</h3>
 
-    <p>
-        <b>Status:</b>
-        <span class="${statusClass}">
-            ${info.status}
-        </span>
-    </p>
+                    <p><b>Hostname:</b>
+                        <span id="hostname-${node}"></span>
+                    </p>
 
-    <hr>
+                    <p>
+                        <b>Status:</b>
+                        <span id="status-${node}"></span>
+                    </p>
 
-    <h4>Running Job</h4>
+                    <hr>
 
-    <p><b>Name:</b> ${info.job?.name || "None"}</p>
+                    <h4>Running Task</h4>
 
-    <p><b>State:</b> ${info.job?.state || "IDLE"}</p>
+                    <p><b>Job ID:</b>
+                        <span id="jobid-${node}"></span>
+                    </p>
 
-</div>
-`; 
+                    <p><b>Task ID:</b>
+                        <span id="taskid-${node}"></span>
+                    </p>
+
+                    <p><b>Description:</b>
+                        <span id="desc-${node}"></span>
+                    </p>
+
+                    <p><b>Script:</b>
+                        <span id="script-${node}"></span>
+                    </p>
+
+                    <p><b>State:</b>
+                        <span id="taskstate-${node}"></span>
+                    </p>
+
+                    <hr>
+
+                    <h4>Run Script</h4>
+
+                    <input
+                        type="file"
+                        id="script-file-${node}"
+                    >
+
+                    <br><br>
+
+                    <button
+                        class="node-btn"
+                        onclick="uploadScript('${node}')">
+                        Upload
+                    </button>
+
+                    <button
+                        class="node-btn"
+                        onclick="runScript('${node}')">
+                        Execute
+                    </button>
+                `;
+                container.appendChild(card); 
         }
-    
+
+        document.getElementById(`hostname-${node}`).innerText = info.hostname || "-";
+        const status = document.getElementById(`status-${node}`);
+        status.innerText = info.status || "OFFLINE";
+        status.className = statusClass;
+
+            document.getElementById(`jobid-${node}`).innerText =
+                info.job?.job_id || "-";
+
+            document.getElementById(`taskid-${node}`).innerText =
+                info.job?.task_id || "-";
+
+            document.getElementById(`desc-${node}`).innerText =
+                info.job?.description || "-";
+
+            document.getElementById(`script-${node}`).innerText =
+                info.job?.script || "-";
+
+            document.getElementById(`taskstate-${node}`).innerText =
+                info.job?.state || "IDLE";
+        }
+
     }
     catch(err) {
-        document.getElementById("nodes").innerHTML =
-            "<p style = 'color:red'>Failed to load nodes.</P>";
+        console.log(err);
     }
 }
-async function loadNodesIntoDropdown() {
 
-    try{
-        const res = await fetch(NODE_API);
-        const data = await res.json();
-        const select = document.getElementById("nodeSelect");
-        select.innerHTML = "";
-
-        for (const node of Object.keys(data)){
-            const option = document.createElement("option")
-            option.value = node;
-            option.textContent = node;
-            select.appendChild(option);
-        }
-
+async function uploadScript(node) {
+    const input = document.getElementById(`script-file-${node}`);
+    if(!input || input.files.length===0){
+        alert("Please select a script.")
+        return;
     }
-    catch (err) {
-        console.log("Failed to load nodes for dropdown");
-    }
-    
+    const formData = new FormData();
+    formData.append("script", input.files[0]);
+    formData.append("node", node);
+
+    const response = await fetch("http://127.0.0.1:5678/script/upload", {method: "POST", body:formData});
+    const data=await response.json();
+    alert(data.message);
 }
+
 function startJob(){
     const node = document.getElementById("nodeSelect").value;
     const script = document.getElementById("script").value;
@@ -516,6 +586,7 @@ updateNodes();
 setInterval(() => {
     updateReservations();
     updateNodes();
+
 }, 2000);
 </script>
 

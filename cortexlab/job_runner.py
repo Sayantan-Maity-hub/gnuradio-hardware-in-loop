@@ -1,5 +1,5 @@
 import re
-from registry import update_job
+from node_registry import update_job
 from ssh_client import SSHConnection
 
 def run_job(node, script_path):

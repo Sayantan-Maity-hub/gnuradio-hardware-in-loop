@@ -20,12 +20,12 @@ def update_node(node, data):
                               break
 
         registry[node]={
-            "hostname": data.get("hostname"),
-            "status": data.get("status"),
+            "hostname": data.get("hostname", node),
+            "status": data.get("status", "OFFLINE"),
             "os": pretty,
             "job": existing_job
         }
-def update_job(node, name = None, state = None, steps = None):
+def update_job(node, job_id = None,  task_id=None, description=None, folder=None, script = None, state = None):
      with lock:
           if node not in registry:
                registry[node] = {
@@ -35,14 +35,17 @@ def update_job(node, name = None, state = None, steps = None):
                     "job": {}
                }
           registry[node]["job"] = {
-               "name": name,
+               "job_id": job_id,
+               "task_id": task_id,
+               "description": description,
+               "folder": folder,
+               "script": script,
                "state": state,
-               "step": steps or []
-
           }
-    
+def clear_job(node):
+     update_job(node = node, Job_id=None, task_id=None, description=None, folder=None, script= None, state=None)
+
 def get_nodes():
-    print(dict(registry))
     with lock:
         return dict(registry)
 

@@ -1,6 +1,6 @@
 from flask import Flask, Response, render_template, request, jsonify
 from flask_cors import CORS
-from registry import get_nodes, get_node
+from node_registry import get_nodes, get_node
 from reservation import reserve_nodes, walltime_to_seconds
 from reservation_monitor import reservation_monitor
 from minus_task_monitor import minus_task_monitor
@@ -152,9 +152,41 @@ def status_nodes():
                 
     return jsonify(get_nodes())
 
+@app.route("/script/upload", methods=["POST"])
+def upload_script():
+
+    node = request.form["node"]
+    file = request.files["script"]
+
+    os.makedirs("uploads", exist_ok=True)
+
+    local_path = os.path.join("uploads", file.filename)
+    file.save(local_path)
+
+    node_data = get_node(node)
+
+    job = node_data["job"]
+    task_folder = job["folder"]
+
+    remote_folder = f"{task_folder}/{node}"
+    remote_path = f"{remote_folder}/{file.filename}"
+
+    remote = cortexlab_Remote()
+
+    remote.mkdir_p(remote_folder)          # create if not exists
+    remote.upload_file(local_path, remote_path)
+
+    remote.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Upload Successful",
+        "remote_path": remote_path
+    })
+
 @app.route("/control/job/start", methods = ["POST"])
 def start_job():
-    data = request.json
+    data = request.get_json()
     node = data.get("node")
     script = data.get("script")
     if not node or not script:
