@@ -150,6 +150,73 @@
         button:hover{
             background:#1d4ed8;
         }
+        .execution-header{
+            display: grid;
+            grid-template-columns: 
+            220px
+            90px
+            80px
+            170px
+            150px
+            120px
+            120px;
+            font-weight: bold;
+            background: #2563eb;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+
+        }
+
+        .execution-row{
+            border:1px solid #ddd;
+            border-bottom: 15px;
+            overflow: hidden;
+
+
+        }
+        .execution-summery{
+            display: grid;
+            grid-template-columns: 220px 90px 80px 170px 150px 120px 120px;
+            align-items: center;
+            padding: 14px;
+            background: white;
+
+        }
+        .execution-details{
+            background: #f9fafb;
+            border-top: 1px solid #ddd;
+            padding: 15px;
+
+        }
+        .execution-output{
+            margin-top: 10px;
+            background: #111827;
+            color:#22c55e;
+            padding: 12px;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-family: Consolas,monospace;
+
+        }
+        .status-running{
+            color: #eab308;
+            font-weight: bold;
+
+        }
+        .status-finished{
+            color:#16a34a;
+            font-weight: bold;
+
+        }
+        .status-error{
+            color:#dc2626;
+            font-weight: bold;
+        }
+        
     </style>
 </head>
 <body>
@@ -212,9 +279,21 @@
     <div class="container" id="nodes"></div>
 </div>
 
-<div class="panel" id="execution-panel">
-
+<div class="panel">
     <h2>Script Execution</h2>
+
+    <div class="execution-header">
+        <div>Script</div>
+        <div>Node</div>
+        <div>Job</div>
+        <div>Task</div>
+        <div>Started</div>
+        <div>Status</div>
+        <div>Action</div>
+    </div>
+    <div id="execution-list"></div>
+
+</div>    
     
 
 </div>

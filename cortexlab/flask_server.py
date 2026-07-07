@@ -10,7 +10,7 @@ from cortexlab_remote import cortexlab_Remote
 from reservation_registry import get_all_reservation, get_reservation, update_reservation
 from job_runner import run_job
 from execution_monitor import execute_script
-from execution_registy import get_execution, get_all_execution
+from execution_registy import create_execution, update_execution, get_execution, get_all_execution
 import threading
 import json
 import os
@@ -202,13 +202,8 @@ def run_script():
             "message": "Node not found"
             }), 400 
     job = node_data.get("job", {})
-    node_data = get_node(node)
-
-    job = node_data["job"]
-    task_folder = job["folder"]
-    script = job["script"]
-
-    remote_folder = f"{task_folder}/{node}"
+    task_folder = job.get("folder")
+    script = job.get("script")
 
     if not script:
         return jsonify({
@@ -217,22 +212,22 @@ def run_script():
         }),400
     extension = os.path.splitext(script)[1]
     if extension == ".sh":
-        command = "bash"
+        runner = "bash"
 
     elif extension == ".py":
-        command = f"python3"
+        runner = f"python3"
 
     elif extension == ".pl":
-        command = f"perl"
+        runner = f"perl"
 
     elif extension == ".rb":
-        command = f"ruby"
+        runner = f"ruby"
 
     elif extension == ".php":
-        command = f"php"
+        runner = f"php"
 
     elif extension == ".js":
-        command = f"node"
+        runner = f"node"
 
     else:
         return jsonify({
@@ -240,10 +235,16 @@ def run_script():
             "message": f"Unsupported script type: {extension}"
         }), 400
     
-    threading.Thread(target=execute_script, args=(node, remote_folder, script, command), daemon=True).start()
-    print("Thread started")
+    execution_id = create_execution(job_id=job.get("job_id"), task_id=job.get("test_id"), node=node, folder = f"{task_folder}/{node}", script=script, runner= runner)
+
+    
+    threading.Thread(target=execute_script, args=(execution_id,), daemon=True).start()
+    print(f"Execution {execution_id} started")
+    
+    update_execution(execution_id, state="RUNNING")
     return jsonify({
         "success": True,
+        "execution_id": execution_id,
          "message": "Execution started"
     }), 200
 
