@@ -9,7 +9,8 @@ from scenario_generator import generate_scenario, minus_create_task, minus_submi
 from cortexlab_remote import cortexlab_Remote
 from reservation_registry import get_all_reservation, get_reservation, update_reservation
 from job_runner import run_job
-from execution_monitor import start_execution
+from execution_monitor import execute_script
+from execution_registy import get_execution
 import threading
 import json
 import os
@@ -201,8 +202,13 @@ def run_script():
             "message": "Node not found"
             }), 400 
     job = node_data.get("job", {})
-    script = job.get("script")
-    folder = job.get("folder")
+    node_data = get_node(node)
+
+    job = node_data["job"]
+    task_folder = job["folder"]
+    script = job["script"]
+
+    remote_folder = f"{task_folder}/{node}"
 
     if not script:
         return jsonify({
@@ -211,31 +217,22 @@ def run_script():
         }),400
     extension = os.path.splitext(script)[1]
     if extension == ".sh":
-        command = f"bash {script}"
+        command = "bash"
 
     elif extension == ".py":
-        command = f"python3 {script}"
+        command = f"python3"
 
     elif extension == ".pl":
-        command = f"perl {script}"
+        command = f"perl"
 
     elif extension == ".rb":
-        command = f"ruby {script}"
+        command = f"ruby"
 
     elif extension == ".php":
-        command = f"php {script}"
+        command = f"php"
 
     elif extension == ".js":
-        command = f"node {script}"
-
-    elif extension == ".m":
-        command = f"matlab -batch \"run('{script}')\""
-
-    elif extension == ".out":
-        command = f"./{script}"
-
-    elif extension == ".bin":
-        command = f"./{script}"
+        command = f"node"
 
     else:
         return jsonify({
@@ -243,9 +240,13 @@ def run_script():
             "message": f"Unsupported script type: {extension}"
         }), 400
     
-    start_execution(node = node, script=script, command=command)
+    threading.Thread(target=execute_script, args=(node, remote_folder, script, command), daemon=True).start()
+    print("Thread started")
+    return jsonify({
+        "success": True,
+         "message": "Execution started"
+    }), 200
 
-    return jsonify({"success": True, "message": "Execution started.", "command": command, "folder": folder})
 
 
 @app.route("/status/job/<node>")

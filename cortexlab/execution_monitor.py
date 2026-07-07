@@ -2,17 +2,20 @@ import threading
 import re
 import config
 from ssh_client import SSHConnection
-from execution_monitor import(start_execution, finish_execution, fail_execution, update_execution)
+from execution_registy import(fail_execution, update_execution, finished_execution)
 
 def execute_script(node, folder, script, runner):
     ssh = SSHConnection(node)
     try :
-        remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{node}/{script}"
+        remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
+        print(remote_script)
+
         run_cmd = (
-            f"{runner} {remote_script} 2>&1 | tee {remote_script}/execution.log"
+            f"{runner} {remote_script} 2>&1 | tee /cortexlab/homes/{config.USERNAME}/{folder}/execution.log"
 
         )
         stdout, stderr = ssh.run_on_node(run_cmd)
+        print(stdout)
         output = ""
         while True:
             line = stdout.readline()
@@ -34,7 +37,7 @@ def execute_script(node, folder, script, runner):
             else:
                 result = "FAILED"
 
-            finish_execution(node = node, result = result, stdout=output, stderr=error)
+            finished_execution(node = node, result = result, stdout=output, stderr=error)
     except Exception as e:
         fail_execution(node, error=str(e))
     finally:

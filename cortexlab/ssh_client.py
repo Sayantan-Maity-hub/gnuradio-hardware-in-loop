@@ -23,31 +23,32 @@ class SSHConnection:
         )
         stdin, stdout, stderr = self.gateway.exec_command(full_cmd)
 
-        out = stdout.read().decode()
-        err = stderr.read().decode()
+       
+    
 
         ignore_patterns = [
         "Permanently added",
         "Warning:",
         "known hosts"
         ]
-        clean_err = err.strip()
+        clean_err = stderr.read().decode().strip()
 
             
         if clean_err:
             if not any(p in clean_err for p in ignore_patterns):
 
-                raise Exception(err)
-        return out, err
+                raise Exception(clean_err)
+        return stdout, stderr
 
     def get_node_info(self):
 
         hostname, _  = self.run_on_node("hostname")
         os_info, _ = self.run_on_node("cat /etc/os-release")
-
+        hostname = hostname.read().decode()
+        os_info = os_info.read().decode()
         return {
             "status": "ONLINE",
-            "hostname": hostname.strip(),
+            "hostname": hostname,
             "os": os_info
         }
 
