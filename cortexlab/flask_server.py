@@ -10,7 +10,7 @@ from cortexlab_remote import cortexlab_Remote
 from reservation_registry import get_all_reservation, get_reservation, update_reservation
 from job_runner import run_job
 from execution_monitor import execute_script
-from execution_registy import get_execution
+from execution_registy import get_execution, get_all_execution
 import threading
 import json
 import os
@@ -247,6 +247,12 @@ def run_script():
          "message": "Execution started"
     }), 200
 
+@app.route("/status/execution")
+def status_execution():
+    return jsonify({
+        "success": True,
+        "executions": get_all_execution()
+    })
 
 
 @app.route("/status/job/<node>")

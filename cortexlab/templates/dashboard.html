@@ -212,15 +212,10 @@
     <div class="container" id="nodes"></div>
 </div>
 
-<div class="panel">
-<!--JOB CONTROL PANEL-->
-    <h2>Run Job on Node</h2>
-    <select id="nodeSelect"></select>
-    <input id="script" placeholder="/tmp/basic_test.sh" />
-    <button onclick="startJob()">Start Job</button>
-    <p id="jobStatus"></p>
-    <br><br>
-    <p id="reservationStatus"></p>
+<div class="panel" id="execution-panel">
+
+    <h2>Script Execution</h2>
+    
 
 </div>
 
@@ -553,19 +548,17 @@ async function runScript(node) {
     const data = await response.json();
     alert(data.message);
 }
-async function watchJob(node) {
-        const res = await fetch(`http://127.0.0.1:5678/status/job/${node}`);
-        const job = await res.json();
+async function updateExecution() {
+        const res = await fetch("http://127.0.0.1:5678/status/execution");
+        const data = await res.json();
 
-        document.getElementById("jobStatus").innerText=`${node} --> ${job.state}`;
-        if (job.state === "FINISHED") {
-            clearInterval(timer)
-            let result = "UNKNOWN";
-            if (job.step && job.step.length > 0){
-                result = job.step[0].result;
-            }
-            document.getElementById("jobStatus").innerText=`${node} --> FINISHED | Result: ${result}`;
-            console.log("Steps:", job.step);
+        const panel = document.getElementById("execution-panel");
+        panel.innerHTML = "";
+        
+        for (const node in data.executions){
+            const exe = data.executions[node];
+            panel.innerHTML += `
+            <div class = "execution-card">`
         }
     };
     

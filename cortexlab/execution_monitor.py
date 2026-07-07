@@ -9,6 +9,7 @@ def execute_script(node, folder, script, runner):
     try :
         remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
         print(remote_script)
+        log_path = f"/cortexlab/homes/{config.USERNAME}/{folder}/execution.log"
 
         run_cmd = (
             f"{runner} {remote_script} 2>&1 | tee /cortexlab/homes/{config.USERNAME}/{folder}/execution.log"
@@ -37,7 +38,7 @@ def execute_script(node, folder, script, runner):
             else:
                 result = "FAILED"
 
-            finished_execution(node = node, result = result, stdout=output, stderr=error)
+            finished_execution(node = node, result = result, stdout=output, stderr=error, log_path=log_path)
     except Exception as e:
         fail_execution(node, error=str(e))
     finally:
