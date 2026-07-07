@@ -628,18 +628,122 @@ async function runScript(node) {
     alert(data.message);
 }
 async function updateExecution() {
+    try {
         const res = await fetch("http://127.0.0.1:5678/status/execution");
         const data = await res.json();
 
-        const panel = document.getElementById("execution-panel");
-        panel.innerHTML = "";
+        const list = document.getElementById("execution-list");
+        list.innerHTML = "";
+        const executions = Object.values(data.executuions);
+
+        executions.forEach(exe => {
+            let statusClass = ""
+            switch ((exe.state || "").toUpperCase()){
+                case "RUNNING":
+                    statusClass = "status-running";
+                    break;
+                case "FINISHED":
+                    statusClass = "status-finished";
+                    break;
+
+                case "ERROR":
+                case "FAILED":
+                    statusClass = "status-error";
+                    break;
+
+                default:
+                    statusClass = "";
+            }
+            const output = exe.stderr && exe.stderr.length > 0 ? exe.stderr : (exe.stderr || "NO output")
+            list.innerHTML += `
+            <div class="execution-row">
+
+    <div class="execution-summary">
+
+        <div>
+            <b>${exe.script}</b><br>
+            <small>${exe.command}</small>
+        </div>
+
+        <div>${exe.node}</div>
+
+        <div>${exe.job_id ?? "-"}</div>
+
+        <div>${exe.task_id ?? "-"}</div>
+
+        <div>${exe.started ?? "-"}</div>
+
+        <div class="${statusClass}">
+            ${exe.state}
+        </div>
+        <div>
+
+            ${
+                exe.state === "RUNNING"
+
+                ?
+
+                `<button onclick="stopExecution(${exe.execution_id})">
+                    Stop
+                </button>`
+
+                :
+
+                `<button onclick="downloadExecution(${exe.execution_id})">
+                    Download
+                </button>`
+            }
+        </div>
+
+    </div>
+
+    <div class="execution-details">
+
+        <b>Result :</b> ${exe.result ?? "-"}<br><br>
+
+        <b>Ended :</b> ${exe.ended ?? "-"}<br><br>
+
+        <b>Output</b>
+
+        <div class="execution-output">
+${output}
+        </div>
+    </div>
+</dive>
+
+`;
+
+        });
+        if (executions.length === 0){
         
-        for (const node in data.executions){
-            const exe = data.executions[node];
-            panel.innerHTML += `
-            <div class = "execution-card">`
+        list.innerHTML = "<p>No script execution yet.</p>";
+    }
+}
+catch (err){
+    console.log(err);
+}
+}
+
+async function downloadExecution(id){
+
+    window.open(`http://127.0.0.1:5678/execution/download/${id}`);
+
+}
+
+async function stopExecution(id){
+
+    const res = await fetch(
+        `http://127.0.0.1:5678/execution/stop/${id}`,
+        {
+            method:"POST"
         }
-    };
+    );
+
+    const data = await res.json();
+
+    alert(data.message);
+
+}
     
 
 updateReservations();
