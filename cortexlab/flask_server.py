@@ -11,6 +11,7 @@ from reservation_registry import get_all_reservation, get_reservation, update_re
 from job_runner import run_job
 from execution_monitor import execute_script
 from execution_registy import create_execution, update_execution, get_execution, get_all_execution
+from script_parser import script_parser
 import threading
 import json
 import os
@@ -175,11 +176,18 @@ def upload_script():
     task_folder = job["folder"]
 
     remote_folder = f"{task_folder}/{node}"
+    instrumented_script = script_parser(
+    input_file=local_path,
+    output_file=local_path.replace(".py", "_instrumented.py")
+)
+
+# Execute instrumented_script instead of script_path
     
     remote = cortexlab_Remote()
 
-    remote.upload_folder(local_path, remote_folder)
+    remote.upload_folder(instrumented_script, remote_folder)
     remote.close()
+    
 
     remote_path = f"{remote_folder}/{file.filename}"
 
@@ -238,7 +246,8 @@ def run_script():
             "message": f"Unsupported script type: {extension}"
         }), 400
     
-    execution_id = create_execution(job_id=job.get("job_id"), task_id=job.get("test_id"), node=node, folder = f"{task_folder}/{node}", script=script, runner= runner)
+    executon_path = f"{os.path.splitext(script)[0]}_instrumented.py"
+    execution_id = create_execution(job_id=job.get("job_id"), task_id=job.get("test_id"), node=node, folder = f"{task_folder}/{node}", script=executon_path, runner= runner)
 
     
     threading.Thread(target=execute_script, args=(execution_id,), daemon=True).start()

@@ -4,4 +4,3 @@ pyyaml
 pytest
 datetime
 flask_cors
-pasixpath

@@ -11,6 +11,8 @@ def main():
     flask_thread.start()
     print("Flask API available at:")
     print("http://127.0.0.1:5678")
+
+    
   
     '''
 

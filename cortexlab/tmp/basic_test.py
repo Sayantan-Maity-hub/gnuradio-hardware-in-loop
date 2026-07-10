@@ -1,15 +1,17 @@
 import time
 
-print("Start")
-
+# STATE: PREPARING
+print("Initializing USRP...")
 time.sleep(15)
 
-print("Step 1")
-
+# STATE: READY
+print("Receiver is ready")
 time.sleep(15)
 
-print("Step 2")
+# STATE: RUNNING
+for i in range(15):
+    print(f"Packet {i}")
+    time.sleep(15)
 
-time.sleep(15)
-
-print("Finished")
+# STATE: FINISHED
+print("Done")
