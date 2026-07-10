@@ -15,6 +15,8 @@ import threading
 import json
 import os
 import re
+import logging
+
 
 
 app = Flask(__name__)
@@ -102,6 +104,7 @@ def create_task():
     task_id = minus_submit_task(remote, remote_folder)
 
     #starting thread for monitor task.
+    
     threading.Thread(target=minus_task_monitor, args=(job_id, task_id), daemon=True).start()
 
     task_entry = {
@@ -215,7 +218,7 @@ def run_script():
         runner = "bash"
 
     elif extension == ".py":
-        runner = f"python3"
+        runner = f"python3 -u"
 
     elif extension == ".pl":
         runner = f"perl"
@@ -265,6 +268,8 @@ def job_status(node):
 
 
 def start_flask():
+    log = logging.getLogger('werkzeug')
+    log.disabled = True
     app.run(host="0.0.0.0", port=5678, debug=False, use_reloader = False)
 
 

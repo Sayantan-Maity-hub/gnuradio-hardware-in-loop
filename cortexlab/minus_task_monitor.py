@@ -26,7 +26,6 @@ def update_task(job_id, task_id, **kwargs):
         return False
 
 def minus_task_monitor(job_id, task_id):
-    print(f"Task monitor started for {task_id}")
 
     remote = None
 
@@ -84,10 +83,8 @@ def minus_task_monitor(job_id, task_id):
                 else:
                     state = "UNKNOWN"
                     update_task(job_id, task_id, state = state)
-                print(task_id, state)
 
             except Exception as e:
-                print(f"Task monitor errror for {task_id}:{e}")
                 if remote:
                     try:
                         remote.close()

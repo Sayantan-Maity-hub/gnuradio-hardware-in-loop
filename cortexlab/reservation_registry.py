@@ -34,7 +34,7 @@ def update_reservation(job_id, **kwargs):
         
         reservation_registry[job_id].update(kwargs)
         reservation_registry[job_id]["last_update"] = time.time()
-        print(kwargs)
+
 def get_reservation(job_id):
     with lock:
         return reservation_registry.get(job_id)

@@ -14,6 +14,7 @@ class SSHConnection:
 
 
     def run_on_node(self, command):
+        '''
         full_cmd = (
         "ssh "
         "-o StrictHostKeyChecking=no "
@@ -38,6 +39,21 @@ class SSHConnection:
             if not any(p in clean_err for p in ignore_patterns):
 
                 raise Exception(clean_err)
+        return stdout, stderr'''
+
+        full_cmd = (
+            "ssh "
+            "-o StrictHostKeyChecking=no "
+            "-o UserKnownHostsFile=/dev/null "
+            f"-p 2222 root@{self.node_host} "
+            f"{shlex.quote(command)}"
+        )
+
+        stdin, stdout, stderr = self.gateway.exec_command(
+            full_cmd,
+            get_pty=True
+        )
+
         return stdout, stderr
 
     def get_node_info(self):

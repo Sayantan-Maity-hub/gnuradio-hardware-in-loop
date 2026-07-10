@@ -20,9 +20,11 @@ def execute_script(execution_id):
         remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
         print(remote_script)
         log_path = f"/cortexlab/homes/{config.USERNAME}/{folder}/execution_{execution_id}.log"
+        cmd = f"{runner} {remote_script}"
+        print (cmd)
 
         run_cmd = (
-            f"{runner} {remote_script} 2>&1 | tee {log_path}"
+            f"{cmd} 2>&1 | tee {log_path}"
 
         )
         stdout, stderr = ssh.run_on_node(run_cmd)
@@ -48,7 +50,7 @@ def execute_script(execution_id):
         else:
             result = "FAILED"
 
-        finished_execution(execution_id=execution_id, result = result, stdout=output, stderr=error, log_path=log_path)
+        finished_execution(execution_id=execution_id, result = result, stdout=output, stderr=error, log_path=log_path, exit_code=exit_code)
     except Exception as e:
         fail_execution(execution_id, error=str(e))
     finally:

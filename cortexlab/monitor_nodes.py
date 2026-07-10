@@ -8,27 +8,26 @@ def monitor_single_node(node, connections):
         try:
             ssh = SSHConnection(node)
             connections[node] = ssh
-            print(f"[CONNECTED] {node}")
+            
             return
         except Exception as e:
             update_node(node, {
                 "status": "OFFLINE", 
                 "error": str(e)
             })
-            print(f"[FAILED] {node}")
+            
             return
     try:
         ssh = connections[node]
         info = ssh.get_node_info()
         update_node(node, info)
-        print(f"[ONLINE] {node}")
     except Exception as e:
         update_node(node, {
             "status": "OFFLINE",
             "error": str(e)
 
         })
-        print(f"[OFFLINE] {node}: {e}")
+        
 
         try:
             ssh.close()

@@ -748,10 +748,12 @@ async function stopExecution(id){
 
 updateReservations();
 updateNodes();
+updateExecution();
 
 setInterval(() => {
     updateReservations();
     updateNodes();
+    updateExecution();
 
 }, 2000);
 </script>

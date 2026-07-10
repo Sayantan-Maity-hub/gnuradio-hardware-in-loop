@@ -1,7 +1,6 @@
 import time
 import threading
 from flask_server import start_flask
-from reservation_monitor import reservation_monitor
 
 
 def main():
@@ -11,9 +10,8 @@ def main():
     flask_thread = threading.Thread(target = start_flask, daemon=True)
     flask_thread.start()
     print("Flask API available at:")
-    print("http://localhost:5678/status/nodes")
-
-    
+    print("http://127.0.0.1:5678")
+  
     '''
 
     #Node state monitor thread

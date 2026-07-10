@@ -24,7 +24,7 @@ def reservation_monitor(job_id):
                 state = (state_match.group(1) if state_match else "UNKNOWN")
                 update_reservation(job_id, state=state)
                 if state.lower() in ["terminated", "error", "finishing"]:
-                    print(f"Reservation {job_id} is finished")
+                    
                     break
 
 
@@ -39,7 +39,7 @@ def reservation_monitor(job_id):
                     start_dt = datetime.strptime(scheduled_start, "%Y-%m-%d %H:%M:%S")
                     submit_dt = datetime.strptime(submit_time, "%Y-%m-%d %H:%M:%S")
                     wait_min = max(0, int((start_dt - submit_dt).total_seconds()/60))
-                    print(wait_min)
+                
 
                     update_reservation(job_id, waiting_time=wait_min)
                     
@@ -53,8 +53,7 @@ def reservation_monitor(job_id):
                         update_reservation(job_id, assigned_nodes=nodes)
               
             except Exception as e:
-                    print(f"Reservation monitor error for {job_id}: {e}")
-
+                    
                     if remote:
                         try:
                             remote.close()
