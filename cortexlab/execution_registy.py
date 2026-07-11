@@ -26,7 +26,6 @@ def create_execution(job_id, task_id, node, folder, script, runner):
             "log_path":None,
             "started":time.strftime("%Y-%m-%d %H:%M:%S"),
             "ended":None,
-            "exit_code": None
         }
         return execution_id
         
@@ -36,12 +35,6 @@ def update_execution(execution_id, **kwargs):
                 return False
             execution_registry[execution_id].update(kwargs)
             return True
-
-def finished_execution(execution_id, result, stdout, stderr, log_path, exit_code):
-    update_execution(execution_id, state="FINISHED", result=result, stdout = stdout, stderr = stderr, log_path = log_path, ended = time.strftime("%Y-%m-%d %H:%M:%S", exit_code=exit_code))
-
-def fail_execution(execution_id, error):
-    update_execution(execution_id, state="ERROR", stderr = str(error), ended=time.strftime("%Y-%m-%d %H:%M:%S"))
 
 def clear_execution(execution_id):
     with lock:

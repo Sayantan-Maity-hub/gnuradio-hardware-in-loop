@@ -26,7 +26,8 @@ def update_job(node, **kwargs):
                     "hostname": node,
                     "status": "UNKNOWN",
                     "os": None,
-                    "job": {}
+                    "job": {},
+                    "execution_id": None
                }
           job = registry[node].setdefault("job", {})
           for key, value in kwargs.items():

@@ -2,11 +2,12 @@ import threading
 import re
 import config
 from ssh_client import SSHConnection
-from execution_registy import(get_execution, update_execution, fail_execution, finished_execution)
+from execution_registy import(get_execution, update_execution)
+from node_registry import get_node
 
 def execute_script(execution_id):
     execution = get_execution(execution_id)
-
+    
     if execution is None:
         return
     
@@ -15,11 +16,34 @@ def execute_script(execution_id):
     script = execution["script"]
     runner = execution["runner"]
 
+    node_info = get_node(node)
+
+    if node_info is None:
+        update_execution(execution_id, stderr="Assigned node not found")
+        return
+    if node_info["status"] != "ONLINE":
+        update_execution(execution_id, stderr="Assigned node is not ONLINE")
+    
+    update_execution(execution_id, state = "ASSIGNED")
+
+
     ssh = SSHConnection(node)
     try :
+        update_execution(execution_id, state = "PREPARING")
+        update_execution("PREARING")
         remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
         print(remote_script)
         log_path = f"/cortexlab/homes/{config.USERNAME}/{folder}/execution_{execution_id}.log"
+
+        stdout, stderr = ssh.run_on_node(f'test -f "{remote_script}" && echo OK')
+        exist = stdout.read().decode().strip()
+        print(exist)
+
+        if exist != "OK":
+            update_execution(execution_id, error="Experiment script not found on remote server.")
+
+        update_execution(execution_id, state = "READY")
+
         cmd = f"{runner} {remote_script}"
         print (cmd)
 
@@ -28,8 +52,9 @@ def execute_script(execution_id):
 
         )
         stdout, stderr = ssh.run_on_node(run_cmd)
+        update_execution(execution_id, state = "RUNNING")
         print(stdout)
-        output = ""
+        output = stdout.read().decode()
         while True:
             line = stdout.readline()
             if not line:
@@ -50,8 +75,10 @@ def execute_script(execution_id):
         else:
             result = "FAILED"
 
-        finished_execution(execution_id=execution_id, result = result, stdout=output, stderr=error, log_path=log_path, exit_code=exit_code)
+        update_execution(execution_id=execution_id, state = "FINISHED", exit_code = exit_code)
+
+        
     except Exception as e:
-        fail_execution(execution_id, error=str(e))
+        update_execution(execution_id, error=str(e))
     finally:
         ssh.close()

@@ -164,7 +164,7 @@ def upload_script():
     node = request.form["node"]
     file = request.files["script"]
     update_job(node=node, script = file.filename)
-
+    
     os.makedirs("uploads", exist_ok=True)
 
     local_path = os.path.join("uploads", file.filename)
@@ -176,20 +176,21 @@ def upload_script():
     task_folder = job["folder"]
 
     remote_folder = f"{task_folder}/{node}"
-    instrumented_script = script_parser(
-    input_file=local_path,
-    output_file=local_path.replace(".py", "_instrumented.py")
-)
-
-# Execute instrumented_script instead of script_path
     
+    instrumented_script = script_parser(input_file=local_path, output_file=local_path.replace(".py", "_instrumented.py"))
+    script_name = os.path.basename(instrumented_script)
+    execution_id = create_execution(job_id=job.get("job_id"), task_id=job.get("test_id"), node=node, folder = remote_folder, script=script_name, runner=None)
+
+    update_job(node=node, execution_id=execution_id)
+        
     remote = cortexlab_Remote()
 
     remote.upload_folder(instrumented_script, remote_folder)
     remote.close()
     
 
-    remote_path = f"{remote_folder}/{file.filename}"
+    remote_path = f"{remote_folder}/{script_name}"
+    update_execution(execution_id, state = "CREATED", script=script_name)
 
 
     remote.close()
@@ -215,6 +216,7 @@ def run_script():
     job = node_data.get("job", {})
     task_folder = job.get("folder")
     script = job.get("script")
+    execution_id = job.get("execution_id")
 
     if not script:
         return jsonify({
@@ -222,38 +224,17 @@ def run_script():
             "message": "No script uploaded"
         }),400
     extension = os.path.splitext(script)[1]
-    if extension == ".sh":
-        runner = "bash"
-
-    elif extension == ".py":
+    if extension == ".py":
         runner = f"python3 -u"
-
-    elif extension == ".pl":
-        runner = f"perl"
-
-    elif extension == ".rb":
-        runner = f"ruby"
-
-    elif extension == ".php":
-        runner = f"php"
-
-    elif extension == ".js":
-        runner = f"node"
-
     else:
         return jsonify({
             "success": False,
             "message": f"Unsupported script type: {extension}"
         }), 400
-    
-    executon_path = f"{os.path.splitext(script)[0]}_instrumented.py"
-    execution_id = create_execution(job_id=job.get("job_id"), task_id=job.get("test_id"), node=node, folder = f"{task_folder}/{node}", script=executon_path, runner= runner)
-
+    update_execution(execution_id=execution_id, runner= runner)
     
     threading.Thread(target=execute_script, args=(execution_id,), daemon=True).start()
-    print(f"Execution {execution_id} started")
     
-    update_execution(execution_id, state="RUNNING")
     return jsonify({
         "success": True,
         "execution_id": execution_id,
@@ -262,10 +243,13 @@ def run_script():
 
 @app.route("/status/execution")
 def status_execution():
+    executions = get_all_execution()
+
     return jsonify({
         "success": True,
-        "executions": get_all_execution()
-    })
+        "count": len(executions),
+        "data": executions
+    }), 200
 
 
 @app.route("/status/job/<node>")
