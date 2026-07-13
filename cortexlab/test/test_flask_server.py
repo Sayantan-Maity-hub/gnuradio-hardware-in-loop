@@ -1,19 +1,12 @@
 from flask_server import app
 from registry import update_node
 
-
 # ======================TEST======================
+
 
 def test_flask_server():
     print("\n[TEST] Flask Server Test")
-    update_node(
-        "mnode14",
-        {
-            "hostname": "mnode14",
-            "status": "ONLINE",
-            "os": "Ubuntu"
-        }
-    )
+    update_node("mnode14", {"hostname": "mnode14", "status": "ONLINE", "os": "Ubuntu"})
 
     client = app.test_client()
     response = client.get("/status/nodes")

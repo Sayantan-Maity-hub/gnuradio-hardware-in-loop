@@ -10,4 +10,3 @@ def test_registry():
     assert "node14" in nodes
     assert nodes["node14"]["status"] == "ONLINE"
     print("[PASS] registry.py")
-    

@@ -2,66 +2,67 @@ import re
 import time
 from datetime import datetime
 from cortexlab_remote import cortexlab_Remote
-from reservation_registry import(reservation_registry, update_reservation, get_reservation)
+from reservation_registry import (
+    reservation_registry,
+    update_reservation,
+    get_reservation,
+)
+
 
 def reservation_monitor(job_id):
     print(f"reservation monitor started for {job_id}..")
     remote = None
 
     while True:
-            try:
-                reservation = get_reservation(job_id)
+        try:
+            reservation = get_reservation(job_id)
 
-                if reservation is None:
-                    print(f"Reservation {job_id} removed.")
-                    break
-                if remote is None:
-                     remote = cortexlab_Remote()
+            if reservation is None:
+                print(f"Reservation {job_id} removed.")
+                break
+            if remote is None:
+                remote = cortexlab_Remote()
 
-                job_info = remote.run(f"oarstat -fj {job_id}")
+            job_info = remote.run(f"oarstat -fj {job_id}")
 
-                state_match = re.search(r"state\s*=\s*(\w+)", job_info)
-                state = (state_match.group(1) if state_match else "UNKNOWN")
-                update_reservation(job_id, state=state)
-                if state.lower() in ["terminated", "error", "finishing"]:
-                    
-                    break
+            state_match = re.search(r"state\s*=\s*(\w+)", job_info)
+            state = state_match.group(1) if state_match else "UNKNOWN"
+            update_reservation(job_id, state=state)
+            if state.lower() in ["terminated", "error", "finishing"]:
 
+                break
 
-                start_match = re.search(f"scheduledStart\s*=\s*(.+)", job_info)
-                submit_match = re.search(f"submissionTime\s*=\s*(.+)", job_info)
-                if start_match and submit_match:
-                    scheduled_start = (start_match.group(1).strip())
-                    submit_time = (submit_match.group(1).strip())
+            start_match = re.search(rf"scheduledStart\s*=\s*(.+)", job_info)
+            submit_match = re.search(rf"submissionTime\s*=\s*(.+)", job_info)
+            if start_match and submit_match:
+                scheduled_start = start_match.group(1).strip()
+                submit_time = submit_match.group(1).strip()
 
-                    update_reservation(job_id, scheduled_start=scheduled_start)
+                update_reservation(job_id, scheduled_start=scheduled_start)
 
-                    start_dt = datetime.strptime(scheduled_start, "%Y-%m-%d %H:%M:%S")
-                    submit_dt = datetime.strptime(submit_time, "%Y-%m-%d %H:%M:%S")
-                    wait_min = max(0, int((start_dt - submit_dt).total_seconds()/60))
-                
+                start_dt = datetime.strptime(scheduled_start, "%Y-%m-%d %H:%M:%S")
+                submit_dt = datetime.strptime(submit_time, "%Y-%m-%d %H:%M:%S")
+                wait_min = max(0, int((start_dt - submit_dt).total_seconds() / 60))
 
-                    update_reservation(job_id, waiting_time=wait_min)
-                    
-                    host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
-                    if host_match:
-                        nodes = []
-                        for host in host_match.group(1).strip().split("+"):
-                            nodes.append(
-                                host.split(".")[0].replace("mnode", "node")
-                            )
-                        update_reservation(job_id, assigned_nodes=nodes)
-              
-            except Exception as e:
-                    
-                    if remote:
-                        try:
-                            remote.close()
-                        except:
-                            pass
+                update_reservation(job_id, waiting_time=wait_min)
 
-                    remote = None
+                host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
+                if host_match:
+                    nodes = []
+                    for host in host_match.group(1).strip().split("+"):
+                        nodes.append(host.split(".")[0].replace("mnode", "node"))
+                    update_reservation(job_id, assigned_nodes=nodes)
 
-            time.sleep(5)
+        except Exception as e:
+
+            if remote:
+                try:
+                    remote.close()
+                except:
+                    pass
+
+            remote = None
+
+        time.sleep(5)
     if remote:
         remote.close()

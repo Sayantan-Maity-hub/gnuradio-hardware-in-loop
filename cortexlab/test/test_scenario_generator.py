@@ -3,6 +3,7 @@ from scenario_generator import generate_scenario
 
 # ===================================== TEST===========================================
 
+
 def test_scenario_generation():
     nodes = ["mnode14.cortexlab.fr", "mnode21.cortexlab.fr"]
 
@@ -12,4 +13,3 @@ def test_scenario_generation():
         data = yaml.safe_load(f)
     assert data["description"] == "Controller Test"
     assert len(data["nodes"]) == 2
-

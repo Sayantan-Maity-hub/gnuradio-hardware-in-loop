@@ -4,26 +4,21 @@ import os
 import cortexlab_remote
 from reservation_registry import update_reservation, get_reservation
 
+
 def generate_scenario(scenario_folder, nodes, duration, task_description):
 
-    scenario = {
-        "description": f"{task_description}",
-        "duration": duration,
-        "nodes": {}
+    scenario = {"description": f"{task_description}", "duration": duration, "nodes": {}}
 
-    }
-    
     scenario_nodes = []
     for host in nodes:
-        node_name= host
+        node_name = host
 
         scenario["nodes"][node_name] = {
             "container": [
                 {
                     "image": "ghcr.io/cortexlab/cxlb-gnuradio-3.10:1.5",
-                    "command": "/usr/sbin/sshd -p 2222 -D"
+                    "command": "/usr/sbin/sshd -p 2222 -D",
                 }
-
             ]
         }
 
@@ -34,17 +29,15 @@ def generate_scenario(scenario_folder, nodes, duration, task_description):
         print("Scenario generation successfull")
 
 
-
 def minus_create_task(remote, remote_folder):
     output = remote.run(f"minus task create -f {remote_folder}")
-    print (output)
+    print(output)
 
 
 def minus_submit_task(remote, remote_folder):
     output = remote.run(f"minus task submit {remote_folder}.task")
     print(f"taskId: {output}")
     return output
-
 
 
 def update_task_status(remote, job_id, task_id):
@@ -55,15 +48,15 @@ def update_task_status(remote, job_id, task_id):
     if "state=RUNNING" in output:
         state = "RUNNING"
 
-    elif "state=FINISHED"  in output:
+    elif "state=FINISHED" in output:
         state = "FINISHED"
 
     elif "state=ERROR" in output:
         state = "ERROR"
 
-    elif "state=WAITING"in output:
+    elif "state=WAITING" in output:
         state = "WAITING"
-    
+
     else:
         state = "UNKNOWN"
 
@@ -73,9 +66,7 @@ def update_task_status(remote, job_id, task_id):
         if task["task_id"] == task_id:
             task["state"] = state
             break
-    
+
     update_reservation(job_id, tasks=reservation["tasks"])
 
     return state
-
-

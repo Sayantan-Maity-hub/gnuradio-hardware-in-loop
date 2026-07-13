@@ -7,14 +7,12 @@ def main():
 
     print("\n Welcome to the cortexlab controller script")
 
-    flask_thread = threading.Thread(target = start_flask, daemon=True)
+    flask_thread = threading.Thread(target=start_flask, daemon=True)
     flask_thread.start()
     print("Flask API available at:")
     print("http://127.0.0.1:5678")
 
-    
-  
-    '''
+    """
 
     #Node state monitor thread
     reservations = get_all_reservation()
@@ -57,15 +55,15 @@ def main():
     wait_for_task_running(remote, config.TASK_ID)
 
     
-    '''
-    #Monitoring the nodes using monitor.py to check if they are online or offline.
-    
-   
+    """
+    # Monitoring the nodes using monitor.py to check if they are online or offline.
+
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         print("Controller stopped.")
+
 
 if __name__ == "__main__":
     main()

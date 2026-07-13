@@ -3,7 +3,20 @@ import time
 
 reservation_registry = {}
 lock = threading.Lock()
-def create_reservation(job_id, username, reservation_type, walltime, future=False, reservation_time=None, requested_nodes=None, requested_count=None, script=None, command=None):
+
+
+def create_reservation(
+    job_id,
+    username,
+    reservation_type,
+    walltime,
+    future=False,
+    reservation_time=None,
+    requested_nodes=None,
+    requested_count=None,
+    script=None,
+    command=None,
+):
 
     with lock:
         reservation_registry[job_id] = {
@@ -22,25 +35,30 @@ def create_reservation(job_id, username, reservation_type, walltime, future=Fals
             "scenario_generate": False,
             "scenatio_upload": False,
             "tasks": [],
-
             "created_at": time.time(),
-            "last_update": time.time()
+            "last_update": time.time(),
         }
+
+
 def update_reservation(job_id, **kwargs):
 
     with lock:
         if job_id not in reservation_registry:
             return
-        
+
         reservation_registry[job_id].update(kwargs)
         reservation_registry[job_id]["last_update"] = time.time()
+
 
 def get_reservation(job_id):
     with lock:
         return reservation_registry.get(job_id)
+
+
 def get_all_reservation():
     with lock:
         return reservation_registry.copy()
+
 
 def delete_reservation(job_id):
     with lock:
