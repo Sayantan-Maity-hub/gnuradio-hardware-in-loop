@@ -1,87 +1,183 @@
-import threading
 import re
+import shlex
+import threading
+import time
+
 import config
-from ssh_client import SSHConnection
+from execution_group_registry import get_execution_group, update_execution_group
 from execution_registy import get_execution, update_execution
 from node_registry import get_node
-import shlex
+from ssh_client import SSHConnection
 
 
-def execute_script(execution_id):
+def _finish_group_if_complete(group_id):
+    """Set a group terminal state after every child execution has ended."""
+    if group_id is None:
+        return
+
+    group = get_execution_group(group_id)
+    if group is None or not group["execution_ids"]:
+        return
+
+    executions = [
+        get_execution(execution_id)
+        for execution_id in group["execution_ids"].values()
+    ]
+    if any(execution is None for execution in executions):
+        update_execution_group(
+            group_id,
+            state="FAILED",
+            sync_state="FAILED",
+            result="FAILED",
+            finished_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+        return
+
+    if any(execution["state"] == "FAILED" for execution in executions):
+        update_execution_group(
+            group_id,
+            state="FAILED",
+            sync_state="FAILED",
+            result="FAILED",
+            finished_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+        return
+
+    if all(execution["state"] == "FINISHED" for execution in executions):
+        passed = all(execution.get("result") in {"PASS", "SUCCESS"} for execution in executions)
+        update_execution_group(
+            group_id,
+            state="FINISHED" if passed else "FAILED",
+            sync_state="COMPLETE" if passed else "FAILED",
+            result="PASS" if passed else "FAILED",
+            finished_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+
+
+def _fail_execution(execution_id, message, ready_barrier=None):
     execution = get_execution(execution_id)
+    group_id = execution.get("group_id") if execution else None
+    update_execution(
+        execution_id,
+        state="FAILED",
+        result="FAILED",
+        stderr=message,
+        ended=time.strftime("%Y-%m-%d %H:%M:%S"),
+    )
+    if ready_barrier is not None:
+        try:
+            ready_barrier.abort()
+        except threading.BrokenBarrierError:
+            pass
+    if group_id is not None:
+        update_execution_group(
+            group_id,
+            state="FAILED",
+            sync_state="FAILED",
+            result="FAILED",
+            error=message,
+            finished_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
 
+
+def execute_script(execution_id, ready_barrier=None, start_at=None):
+    """Prepare one node script and, when provided, synchronize it with its group."""
+    execution = get_execution(execution_id)
     if execution is None:
         return
 
     node = execution["node"]
     folder = execution["folder"]
     script = execution["script"]
-    runner = execution["runner"]
+    group_id = execution.get("group_id")
+    ssh = None
 
-    node_info = get_node(node)
-
-    if node_info is None:
-        update_execution(execution_id, stderr="Assigned node not found")
-        return
-    if node_info["status"] != "ONLINE":
-        update_execution(execution_id, stderr="Assigned node is not ONLINE")
-        return
-
-    update_execution(execution_id, state="ASSIGNED")
-
-    ssh = SSHConnection(node)
     try:
+        node_info = get_node(node)
+        if node_info is None:
+            _fail_execution(execution_id, "Assigned node not found", ready_barrier)
+            return
+        if node_info.get("status") != "ONLINE":
+            _fail_execution(execution_id, "Assigned node is not ONLINE", ready_barrier)
+            return
+
         update_execution(execution_id, state="PREPARING")
-        update_execution("PREARING")
+        ssh = SSHConnection(node)
         remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
-        print(remote_script)
-        log_path = (
-            f"/cortexlab/homes/{config.USERNAME}/{folder}/execution_{execution_id}.log"
-        )
+        log_path = f"/cortexlab/homes/{config.USERNAME}/{folder}/execution_{execution_id}.log"
 
-        stdout, stderr = ssh.run_on_node(f'test -f "{remote_script}" && echo OK')
-        exist = stdout.read().decode().strip()
-        print(exist)
+        stdout, _ = ssh.run_on_node(f'test -f {shlex.quote(remote_script)} && echo OK')
+        if stdout.read().decode().strip() != "OK":
+            _fail_execution(execution_id, "Experiment script not found on remote server", ready_barrier)
+            return
 
-        if exist != "OK":
-            update_execution(
-                execution_id, error="Experiment script not found on remote server."
+        chmod_stdout, chmod_stderr = ssh.run_on_node(f"chmod +x {shlex.quote(remote_script)}")
+        chmod_exit = chmod_stdout.channel.recv_exit_status()
+        if chmod_exit != 0:
+            _fail_execution(
+                execution_id,
+                f"Could not make script executable: {chmod_stderr.read().decode().strip()}",
+                ready_barrier,
             )
-        
-        _, stdout, _ = ssh.run_on_node(f"chmod +x {shlex.quote(remote_script)}")
+            return
 
         update_execution(execution_id, state="READY")
+        if group_id is not None:
+            update_execution_group(group_id, sync_state="WAITING_FOR_NODES")
 
-        run_cmd = f"{remote_script} 2>&1 | tee {log_path}"
-        stdout, stderr = ssh.run_on_node(run_cmd)
+        if ready_barrier is not None:
+            try:
+                ready_barrier.wait(timeout=60)
+            except threading.BrokenBarrierError:
+                _fail_execution(
+                    execution_id,
+                    "Synchronization failed: a group node did not become ready in 60 seconds",
+                )
+                return
+
+        if start_at is not None:
+            delay = start_at - time.time()
+            if delay > 0:
+                time.sleep(delay)
+
         update_execution(execution_id, state="RUNNING")
-        print(stdout)
-        output = stdout.read().decode()
+        if group_id is not None:
+            update_execution_group(
+                group_id,
+                state="RUNNING",
+                sync_state="RUNNING",
+                started_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+            )
+
+        run_cmd = f"{shlex.quote(remote_script)} 2>&1 | tee {shlex.quote(log_path)}"
+        stdout, stderr = ssh.run_on_node(run_cmd)
+        output_parts = []
         while True:
             line = stdout.readline()
             if not line:
                 break
-            print(line, end="")
-            output += line
-            update_execution(execution_id, stdout=output)
-        error = stderr.read().decode()
-        if error:
-            update_execution(execution_id, stderr=error)
-        exit_code = stdout.channel.recv_exit_status()
-        result = "UNKWON"
-        match = re.search(r"::STATUS:.*:(PASS|FAIL):", output)
-        if match:
-            result = match.group(1)
-        elif exit_code == 0:
-            result = "SUCCESS"
-        else:
-            result = "FAILED"
+            output_parts.append(line)
+            update_execution(execution_id, stdout="".join(output_parts))
 
+        error = stderr.read().decode()
+        output = "".join(output_parts)
+        exit_code = stdout.channel.recv_exit_status()
+        match = re.search(r"::STATUS:.*:(PASS|FAIL):", output)
+        result = match.group(1) if match else ("SUCCESS" if exit_code == 0 else "FAILED")
+        state = "FINISHED" if exit_code == 0 and result != "FAIL" else "FAILED"
         update_execution(
-            execution_id=execution_id, state="FINISHED", exit_code=exit_code
+            execution_id,
+            state=state,
+            result=result,
+            stdout=output,
+            stderr=error,
+            exit_code=exit_code,
+            ended=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-    except Exception as e:
-        update_execution(execution_id, error=str(e))
+    except Exception as error:
+        _fail_execution(execution_id, str(error), ready_barrier)
     finally:
-        ssh.close()
+        if ssh is not None:
+            ssh.close()
+        _finish_group_if_complete(group_id)

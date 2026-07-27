@@ -279,6 +279,13 @@
     <div class="container" id="nodes"></div>
 </div>
 
+<div class="panel" style="margin-bottom: 20px;">
+    <h2>Synchronized Execution Groups</h2>
+    <p>Create a group from a task, upload one script per selected node, then run the group.</p>
+    <button onclick="updateExecutionGroups()">Refresh Groups</button>
+    <div id="execution-groups" style="margin-top: 16px;"></div>
+</div>
+
 <div class="panel">
     <h2>Script Execution</h2>
 
@@ -431,6 +438,15 @@ async function updateReservations() {
             <p><b>Folder:</b>
                 ${task.folder}
             </p>
+
+            <input id="group-name-${res.job_id}-${task.task_id}"
+                placeholder="Execution group name">
+            <input id="group-nodes-${res.job_id}-${task.task_id}"
+                placeholder="node14,node16"
+                value="${res.assigned_nodes.join(",")}">
+            <button onclick="createExecutionGroup('${res.job_id}', '${task.task_id}')">
+                Create Execution Group
+            </button>
         </div>
     `).join("")
     :
@@ -627,6 +643,96 @@ async function runScript(node) {
     const data = await response.json();
     alert(data.message);
 }
+
+async function createExecutionGroup(jobId, taskId) {
+    const name = document.getElementById(`group-name-${jobId}-${taskId}`).value.trim();
+    const nodes = document.getElementById(`group-nodes-${jobId}-${taskId}`).value
+        .split(",")
+        .map(node => node.trim())
+        .filter(Boolean);
+
+    if (!nodes.length) {
+        alert("Select at least one reserved node.");
+        return;
+    }
+
+    const response = await fetch("http://127.0.0.1:5678/execution-groups", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({job_id: Number(jobId), task_id: taskId, name, nodes})
+    });
+    const data = await response.json();
+    alert(data.message || (data.success ? `Execution group ${data.group_id} created.` : "Could not create group."));
+    if (data.success) updateExecutionGroups();
+}
+
+async function updateExecutionGroups() {
+    try {
+        const response = await fetch("http://127.0.0.1:5678/execution-groups");
+        const data = await response.json();
+        const container = document.getElementById("execution-groups");
+        const groups = Object.values(data.data || {});
+
+        if (!groups.length) {
+            container.innerHTML = "<p>No execution groups created yet.</p>";
+            return;
+        }
+
+        container.innerHTML = groups.map(group => {
+            const uploads = group.execution_ids || {};
+            const nodeRows = group.nodes.map(node => `
+                <li style="margin: 8px 0;">
+                    <b>${node}</b> — ${uploads[node] ? `uploaded (execution ${uploads[node]})` : "script not uploaded"}<br>
+                    <input type="file" id="group-script-${group.group_id}-${node}">
+                    <button onclick="uploadGroupScript(${group.group_id}, '${node}')">Upload script</button>
+                </li>`).join("");
+            return `
+                <div class="card" style="margin-bottom: 14px;">
+                    <h3>${group.name} (Group ${group.group_id})</h3>
+                    <p>State: <b>${group.state}</b> | Synchronization: <b>${group.sync_state}</b></p>
+                    <p>Result: ${group.result || "-"}</p>
+                    <ul>${nodeRows}</ul>
+                    <button class="node-btn" onclick="runExecutionGroup(${group.group_id})"
+                        ${group.state === "READY_TO_RUN" ? "" : "disabled"}>
+                        Run synchronized group
+                    </button>
+                </div>`;
+        }).join("");
+    } catch (error) {
+        console.error(error);
+        document.getElementById("execution-groups").innerHTML = "<p>Failed to load execution groups.</p>";
+    }
+}
+
+async function uploadGroupScript(groupId, node) {
+    const input = document.getElementById(`group-script-${groupId}-${node}`);
+    if (!input || !input.files.length) {
+        alert("Select a script first.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("group_id", groupId);
+    formData.append("node", node);
+    formData.append("script", input.files[0]);
+    const response = await fetch("http://127.0.0.1:5678/script/upload", {
+        method: "POST",
+        body: formData,
+    });
+    const data = await response.json();
+    alert(data.message || (data.success ? "Script uploaded." : "Upload failed."));
+    updateExecutionGroups();
+}
+
+async function runExecutionGroup(groupId) {
+    const response = await fetch(`http://127.0.0.1:5678/execution-groups/${groupId}/run`, {
+        method: "POST",
+    });
+    const data = await response.json();
+    alert(data.message || "Could not start execution group.");
+    updateExecutionGroups();
+}
+
 async function updateExecution() {
     try {
         const res = await fetch("http://127.0.0.1:5678/status/execution");
@@ -634,7 +740,7 @@ async function updateExecution() {
 
         const list = document.getElementById("execution-list");
         list.innerHTML = "";
-        const executions = Object.values(data.executuions);
+        const executions = Object.values(data.data || {});
 
         executions.forEach(exe => {
             let statusClass = ""
@@ -654,7 +760,7 @@ async function updateExecution() {
                 default:
                     statusClass = "";
             }
-            const output = exe.stderr && exe.stderr.length > 0 ? exe.stderr : (exe.stderr || "NO output")
+            const output = exe.stderr && exe.stderr.length > 0 ? exe.stderr : (exe.stdout || "NO output")
             list.innerHTML += `
             <div class="execution-row">
 
@@ -709,7 +815,7 @@ async function updateExecution() {
 ${output}
         </div>
     </div>
-</dive>
+</div>
 
 `;
 
@@ -749,6 +855,7 @@ async function stopExecution(id){
 updateReservations();
 updateNodes();
 updateExecution();
+updateExecutionGroups();
 
 setInterval(() => {
     updateReservations();

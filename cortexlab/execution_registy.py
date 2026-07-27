@@ -7,7 +7,7 @@ lock = threading.Lock()
 next_execution_id = 1
 
 
-def create_execution(job_id, task_id, node, folder, script, runner):
+def create_execution(job_id, task_id, node, folder, script, runner, group_id=None):
     global next_execution_id
     with lock:
         execution_id = next_execution_id
@@ -16,6 +16,7 @@ def create_execution(job_id, task_id, node, folder, script, runner):
         execution_registry[execution_id] = {
             "job_id": job_id,
             "task_id": task_id,
+            "group_id": group_id,
             "node": node,
             "script": script,
             "folder": folder,
