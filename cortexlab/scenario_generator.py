@@ -1,8 +1,10 @@
 import yaml
 import time
 import os
-import cortexlab_remote
+from cortexlab_remote import cortexlab_Remote
 from reservation_registry import update_reservation, get_reservation
+import threading
+from minus_task_monitor import minus_task_monitor
 
 
 def generate_scenario(scenario_folder, nodes, duration, task_description):
@@ -29,44 +31,51 @@ def generate_scenario(scenario_folder, nodes, duration, task_description):
         print("Scenario generation successfull")
 
 
-def minus_create_task(remote, remote_folder):
+def minus_create_task(remote_folder):
+    remote = cortexlab_Remote()
     output = remote.run(f"minus task create -f {remote_folder}")
     print(output)
 
 
-def minus_submit_task(remote, remote_folder):
-    output = remote.run(f"minus task submit {remote_folder}.task")
-    print(f"taskId: {output}")
-    return output
+def minus_submit_task(job_id, remote_folder):
 
+    while True:
+        reservation = get_reservation(job_id)
 
-def update_task_status(remote, job_id, task_id):
-    print(f"update the task status...")
+        if reservation is None:
+            return
 
-    output = remote.run(f"minus task info {task_id}")
-    print(output)
-    if "state=RUNNING" in output:
-        state = "RUNNING"
+        state = reservation["state"].lower()
 
-    elif "state=FINISHED" in output:
-        state = "FINISHED"
+        # Wait until reservation is ready
+        if state not in ["launching", "running"]:
+            time.sleep(2)
+            continue
 
-    elif "state=ERROR" in output:
-        state = "ERROR"
+        remote = cortexlab_Remote()
 
-    elif "state=WAITING" in output:
-        state = "WAITING"
+        try:
+            output = remote.run(f"minus task submit {remote_folder}.task")
+            task_id = output.strip()
 
-    else:
-        state = "UNKNOWN"
+            # Update the task entry
+            reservation = get_reservation(job_id)
 
-    reservation = get_reservation(job_id)
+            for task in reservation["tasks"]:
+                if task["folder"] == remote_folder:
+                    task["task_id"] = task_id
+                    task["state"] = "SUBMITTED"
+                    break
 
-    for task in reservation["tasks"]:
-        if task["task_id"] == task_id:
-            task["state"] = state
-            break
+            update_reservation(job_id, tasks=reservation["tasks"])
 
-    update_reservation(job_id, tasks=reservation["tasks"])
+            threading.Thread(
+                target=minus_task_monitor,
+                args=(job_id, task_id),
+                daemon=True,
+            ).start()
 
-    return state
+            return
+
+        finally:
+            remote.close()

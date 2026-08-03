@@ -110,31 +110,30 @@ def create_task():
     remote = cortexlab_Remote()
 
     remote.upload_folder(local_folder, remote_folder)
-    minus_create_task(remote, remote_folder)
-    task_id = minus_submit_task(remote, remote_folder)
-
-    # starting thread for monitor task.
-
-    threading.Thread(
-        target=minus_task_monitor, args=(job_id, task_id), daemon=True
-    ).start()
-
+    minus_create_task(remote_folder)
     task_entry = {
-        "task_id": task_id,
-        "description": task_description,
-        "state": "SUBMITTED",
-        "folder": remote_folder,
-    }
-
+            "task_id": None,
+            "description": task_description,
+            "state": "SUBMITTED",
+            "folder": remote_folder,
+        }
+    
     reservation["tasks"].append(task_entry)
-
+    
     update_reservation(job_id=job_id, tasks=reservation["tasks"])
 
-    return jsonify({"success": True, "task_id": task_id})
+    threading.Thread(
+        target=minus_submit_task, args=(job_id, remote_folder), daemon=True
+    ).start()
+
+    return jsonify({
+    "success": True,
+    "message": "Task queued successfully."
+    })
 
 
 @app.route("/status/task")
-def status_task(job_id, task_id):
+def status_task(job_id):
     data = get_reservation(job_id)
     status = data["task_status"]
     return jsonify({"success": True, "task_status": status})
@@ -205,10 +204,8 @@ def upload_script():
 
     remote_folder = f"{task_folder}/{node}"
 
-    instrumented_script = script_parser(
-        input_file=local_path, output_file=local_path.replace(".py", "_instrumented.py")
-    )
-    script_name = os.path.basename(instrumented_script)
+
+    script_name = os.path.basename(local_path)
     execution_id = create_execution(
         job_id=group["job_id"] if group else job.get("job_id"),
         task_id=group["task_id"] if group else job.get("task_id"),
@@ -223,7 +220,7 @@ def upload_script():
 
     remote = cortexlab_Remote()
 
-    remote.upload_folder(instrumented_script, remote_folder)
+    remote.upload_folder(local_path, remote_folder)
     remote.close()
 
     remote_path = f"{remote_folder}/{script_name}"
@@ -341,7 +338,7 @@ def create_execution_group_route():
 
     group_id = create_execution_group(
         job_id=int(job_id),
-        task_id=task_id,
+        task_id=int(task_id),
         name=name,
         nodes=nodes,
         folder=task.get("folder"),
@@ -425,5 +422,5 @@ def job_status(node):
 
 def start_flask():
     log = logging.getLogger("werkzeug")
-    log.disabled = True
-    app.run(host="0.0.0.0", port=5678, debug=False, use_reloader=False)
+    log.disabled = False
+    app.run(host="0.0.0.0", port=5678, debug=True, use_reloader=False)

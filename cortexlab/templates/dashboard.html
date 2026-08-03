@@ -280,7 +280,7 @@
 </div>
 
 <div class="panel" style="margin-bottom: 20px;">
-    <h2>Synchronized Execution Groups</h2>
+    <h2>Execution Groups</h2>
     <p>Create a group from a task, upload one script per selected node, then run the group.</p>
     <button onclick="updateExecutionGroups()">Refresh Groups</button>
     <div id="execution-groups" style="margin-top: 16px;"></div>
@@ -336,11 +336,11 @@ async function submitReservation() {
         const response = await fetch("http://127.0.0.1:5678/reservation/create", {method: "POST", headers:{"Content-Type": "application/json"}, body:JSON.stringify(payload)});
         const data = await response.json();
         if (data.success){
-            document.getElementById("reservationStatus").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
+            document.getElementById("reservationResult").innerHTML = `Reservation submitted.<br> Job ID: ${data.job_id}`;
             updateReservations();
         }
         else{
-            document.getElementById("reservationStatus").innerText = data.error;
+            document.getElementById("reservationResult").innerText = data.error;
             if (data.retry_allowed){
                 if (confirm("Reservation failed. Retry")){
                     submitReservation()
@@ -350,21 +350,25 @@ async function submitReservation() {
 
     }
     catch(err){
-        document.getElementById("reservationStatus").innerText = "Reservation request failed.";
+        document.getElementById("reservationResult").innerText = "Reservation request failed.";
     
     }
 
 }
 async function updateReservations() {
-    const active = document.activeElement;
+const active = document.activeElement;
 
-    if (
-        active &&
-        active.id &&
-        active.id.startsWith("task-desc-")
-    ) {
-        return;
-    }
+if (
+    active &&
+    active.id &&
+    (
+        active.id.startsWith("task-desc-") ||
+        active.id.startsWith("group-name-") ||
+        active.id.startsWith("group-nodes-")
+    )
+) {
+    return;
+}
 
     try {
         const response = await fetch("http://127.0.0.1:5678/status/reservations");
@@ -416,7 +420,11 @@ async function updateReservations() {
         ${
     res.tasks && res.tasks.length > 0
     ?
-    res.tasks.map(task => `
+    res.tasks.map(task => {
+
+        console.log("Task ID =", JSON.stringify(task.task_id));
+
+        return `
         <div style="
             border:1px solid #ddd;
             padding:10px;
@@ -448,7 +456,7 @@ async function updateReservations() {
                 Create Execution Group
             </button>
         </div>
-    `).join("")
+    `}).join("")
     :
     "No tasks created"
 }
@@ -496,11 +504,11 @@ async function createTask(job_id) {
         const data = await response.json();
 
         if (data.success) {
-            alert(`Task created successfully. Task ID: ${data.task_id}`);
+            alert(data.message);
             updateReservations();
         }
         else {
-            alert(data.message);
+            alert(data.error || "Task creation failed.");
         }
     }
     catch(err) {
