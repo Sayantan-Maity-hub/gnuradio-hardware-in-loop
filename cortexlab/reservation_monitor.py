@@ -9,6 +9,25 @@ from reservation_registry import (
 )
 
 
+def parse_assigned_nodes(job_info):
+    
+    for field in ("assigned_hostnames", "assigned_network_address"):
+        match = re.search(
+            rf"(?im)^[ \t]*{field}[ \t]*=[ \t]*([^\r\n]*)", job_info
+        )
+        if not match:
+            continue
+
+        nodes = [
+            f"node{number}"
+            for number in re.findall(r"\bmnode(\d+)(?:\.cortexlab\.fr)?\b", match.group(1))
+        ]
+        if nodes:
+            return nodes
+
+    return []
+
+
 def reservation_monitor(job_id):
     print(f"reservation monitor started for {job_id}..")
     remote = None
@@ -46,11 +65,8 @@ def reservation_monitor(job_id):
 
                 update_reservation(job_id, waiting_time=wait_min)
 
-                host_match = re.search(r"assigned_hostnames\s*=\s*(.+)", job_info)
-                if host_match:
-                    nodes = []
-                    for host in host_match.group(1).strip().split("+"):
-                        nodes.append(host.split(".")[0].replace("mnode", "node"))
+                nodes = parse_assigned_nodes(job_info)
+                if nodes:
                     update_reservation(job_id, assigned_nodes=nodes)
 
         except Exception as e:

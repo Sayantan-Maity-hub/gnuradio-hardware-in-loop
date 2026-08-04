@@ -23,6 +23,9 @@ def create_execution(job_id, task_id, node, folder, script, runner, group_id=Non
             "runner": runner,
             "state": "STARTING",
             "result": None,
+            # Structured result emitted by the experiment script.  This stays
+            # separate from the controller-level PASS/FAILED result above.
+            "experiment_result": None,
             "stdout": "",
             "stderr": "",
             "log_path": None,

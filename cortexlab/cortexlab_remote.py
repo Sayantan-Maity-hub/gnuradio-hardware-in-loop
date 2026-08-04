@@ -54,6 +54,7 @@ class cortexlab_Remote:
 
                     try:
                         sftp.put(local_file, remote_file)
+                        self.run(f"sed -i 's/\r$//' '{remote_file}'")
                         print("SUCCESS")
                     except Exception as e:
                         print("UPLOAD ERROR:", e)

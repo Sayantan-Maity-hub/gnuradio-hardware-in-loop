@@ -676,13 +676,41 @@ async function createExecutionGroup(jobId, taskId) {
 
 async function updateExecutionGroups() {
     try {
+        // Re-rendering replaces file inputs and clears their selected files.
+        // Preserve a user's pending upload until it is submitted or cancelled.
+        const hasPendingGroupFile = () => [...document
+            .getElementById("execution-groups")
+            .querySelectorAll('input[type="file"]')]
+            .some(input => input.files && input.files.length > 0);
+        if (hasPendingGroupFile()) {
+            return;
+        }
+
         const response = await fetch("http://127.0.0.1:5678/execution-groups");
         const data = await response.json();
+        // A refresh that began before the file was picked must not wipe it.
+        if (hasPendingGroupFile()) {
+            return;
+        }
         const container = document.getElementById("execution-groups");
         const groups = Object.values(data.data || {});
 
         if (!groups.length) {
             container.innerHTML = "<p>No execution groups created yet.</p>";
+            return;
+        }
+
+        const groupsChanged =
+            container.querySelectorAll("[data-execution-group-id]").length !== groups.length ||
+            groups.some(group => !document.querySelector(`[data-execution-group-id="${group.group_id}"]`));
+        if (!groupsChanged) {
+            groups.forEach(group => {
+                document.getElementById(`group-state-${group.group_id}`).innerText = group.state;
+                document.getElementById(`group-sync-${group.group_id}`).innerText = group.sync_state;
+                document.getElementById(`group-result-${group.group_id}`).innerText = group.result || "-";
+                const runButton = document.getElementById(`group-run-${group.group_id}`);
+                runButton.disabled = group.state !== "READY_TO_RUN";
+            });
             return;
         }
 
@@ -695,12 +723,12 @@ async function updateExecutionGroups() {
                     <button onclick="uploadGroupScript(${group.group_id}, '${node}')">Upload script</button>
                 </li>`).join("");
             return `
-                <div class="card" style="margin-bottom: 14px;">
+                <div class="card" data-execution-group-id="${group.group_id}" style="margin-bottom: 14px;">
                     <h3>${group.name} (Group ${group.group_id})</h3>
-                    <p>State: <b>${group.state}</b> | Synchronization: <b>${group.sync_state}</b></p>
-                    <p>Result: ${group.result || "-"}</p>
+                    <p>State: <b id="group-state-${group.group_id}">${group.state}</b> | Synchronization: <b id="group-sync-${group.group_id}">${group.sync_state}</b></p>
+                    <p>Result: <span id="group-result-${group.group_id}">${group.result || "-"}</span></p>
                     <ul>${nodeRows}</ul>
-                    <button class="node-btn" onclick="runExecutionGroup(${group.group_id})"
+                    <button id="group-run-${group.group_id}" class="node-btn" onclick="runExecutionGroup(${group.group_id})"
                         ${group.state === "READY_TO_RUN" ? "" : "disabled"}>
                         Run synchronized group
                     </button>
@@ -729,6 +757,7 @@ async function uploadGroupScript(groupId, node) {
     });
     const data = await response.json();
     alert(data.message || (data.success ? "Script uploaded." : "Upload failed."));
+    input.value = "";
     updateExecutionGroups();
 }
 
@@ -769,6 +798,9 @@ async function updateExecution() {
                     statusClass = "";
             }
             const output = exe.stderr && exe.stderr.length > 0 ? exe.stderr : (exe.stdout || "NO output")
+            const experimentResult = exe.experiment_result
+                ? `<b>Experiment result:</b><pre>${JSON.stringify(exe.experiment_result, null, 2)}</pre>`
+                : "<b>Experiment result:</b> No structured result returned.<br><br>";
             list.innerHTML += `
             <div class="execution-row">
 
@@ -814,6 +846,8 @@ async function updateExecution() {
     <div class="execution-details">
 
         <b>Result :</b> ${exe.result ?? "-"}<br><br>
+
+        ${experimentResult}
 
         <b>Ended :</b> ${exe.ended ?? "-"}<br><br>
 
@@ -869,6 +903,7 @@ setInterval(() => {
     updateReservations();
     updateNodes();
     updateExecution();
+    updateExecutionGroups();
 
 }, 2000);
 </script>

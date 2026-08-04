@@ -41,6 +41,35 @@ app = Flask(__name__)
 CORS(app)
 
 
+TEXT_SCRIPT_EXTENSIONS = {".py", ".sh", ".bash"}
+
+
+def normalize_script_line_endings(path):
+    """Convert Windows CRLF line endings to LF before a Linux-node upload.
+
+    Linux interprets the first line of an executable script as its shebang.
+    A CRLF-terminated shebang becomes ``python3\\r`` and cannot be executed.
+    """
+    if os.path.splitext(path)[1].lower() not in TEXT_SCRIPT_EXTENSIONS:
+        return False
+
+    with open(path, "rb") as script_file:
+        content = script_file.read()
+
+    # Do not attempt text normalization on a binary file with a misleading
+    # extension.
+    if b"\x00" in content:
+        return False
+
+    normalized = content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    if normalized == content:
+        return False
+
+    with open(path, "wb") as script_file:
+        script_file.write(normalized)
+    return True
+
+
 @app.route("/")
 def dashboard():
     return render_template("dashboard.html")
@@ -103,16 +132,21 @@ def create_task():
     local_folder = os.path.join(str(job_id), safe_desc)
     remote_folder = f"{job_id}/{safe_desc}"
 
-    nodes = reservation["assigned_nodes"]
+    nodes = reservation["requested_nodes"]
+    print("Requested nodes:", nodes)
+
     duration = walltime_to_seconds(reservation["walltime"])
 
     generate_scenario(local_folder, nodes, duration, task_description)
     remote = cortexlab_Remote()
 
     remote.upload_folder(local_folder, remote_folder)
-    minus_create_task(remote_folder)
+    minus_create_task(remote_folder, job_id)
+    task_id = minus_submit_task(job_id, remote_folder)
+    print(f"Task {task_id} created and submitted for reservation {job_id}")
+        
     task_entry = {
-            "task_id": None,
+            "task_id": task_id,
             "description": task_description,
             "state": "SUBMITTED",
             "folder": remote_folder,
@@ -122,15 +156,12 @@ def create_task():
     
     update_reservation(job_id=job_id, tasks=reservation["tasks"])
 
-    threading.Thread(
-        target=minus_submit_task, args=(job_id, remote_folder), daemon=True
-    ).start()
-
+    
     return jsonify({
     "success": True,
-    "message": "Task queued successfully."
+    "message": f"Task {task_id} successfully Created.",
+    "task_id": task_id
     })
-
 
 @app.route("/status/task")
 def status_task(job_id):
@@ -154,6 +185,7 @@ def status_nodes():
 
             if task["state"] == "RUNNING":
                 nodes = reservation["assigned_nodes"]
+                print("Running task found, starting node monitor thread for nodes:", nodes)
                 start_monitor = True
                 break
     if start_monitor:
@@ -196,6 +228,7 @@ def upload_script():
 
     local_path = os.path.join("uploads", file.filename)
     file.save(local_path)
+    line_endings_normalized = normalize_script_line_endings(local_path)
 
     node_data = get_node(node)
 
@@ -249,6 +282,7 @@ def upload_script():
             "remote_path": remote_path,
             "execution_id": execution_id,
             "group_id": group["group_id"] if group else None,
+            "line_endings_normalized": line_endings_normalized,
         }
     )
 
@@ -422,5 +456,5 @@ def job_status(node):
 
 def start_flask():
     log = logging.getLogger("werkzeug")
-    log.disabled = False
-    app.run(host="0.0.0.0", port=5678, debug=True, use_reloader=False)
+    log.disabled = True
+    app.run(host="0.0.0.0", port=5678, debug=False, use_reloader=False)

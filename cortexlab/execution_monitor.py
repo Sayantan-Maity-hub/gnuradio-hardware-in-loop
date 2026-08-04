@@ -1,3 +1,4 @@
+import json
 import re
 import shlex
 import threading
@@ -10,8 +11,34 @@ from node_registry import get_node
 from ssh_client import SSHConnection
 
 
+RESULT_PREFIX = "::RESULT::"
+
+
+def _extract_experiment_result(output):
+
+    result = None
+    for line in output.splitlines():
+        if not line.startswith(RESULT_PREFIX):
+            continue
+        payload = line[len(RESULT_PREFIX):].strip()
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError as error:
+            return None, f"Invalid experiment result JSON: {error.msg}"
+        if not isinstance(parsed, dict):
+            return None, "Experiment result must be a JSON object"
+        if parsed.get("status") not in {"passed", "failed"}:
+            return None, 'Experiment result status must be "passed" or "failed"'
+        if "metrics" not in parsed:
+            parsed["metrics"] = {}
+        if not isinstance(parsed["metrics"], dict):
+            return None, "Experiment result metrics must be a JSON object"
+        result = parsed
+    return result, None
+
+
 def _finish_group_if_complete(group_id):
-    """Set a group terminal state after every child execution has ended."""
+
     if group_id is None:
         return
 
@@ -149,7 +176,9 @@ def execute_script(execution_id, ready_barrier=None, start_at=None):
                 started_at=time.strftime("%Y-%m-%d %H:%M:%S"),
             )
 
-        run_cmd = f"{shlex.quote(remote_script)} 2>&1 | tee {shlex.quote(log_path)}"
+
+        pipeline = f"{shlex.quote(remote_script)} 2>&1 | tee {shlex.quote(log_path)}"
+        run_cmd = f"bash -o pipefail -c {shlex.quote(pipeline)}"
         stdout, stderr = ssh.run_on_node(run_cmd)
         output_parts = []
         while True:
@@ -162,13 +191,27 @@ def execute_script(execution_id, ready_barrier=None, start_at=None):
         error = stderr.read().decode()
         output = "".join(output_parts)
         exit_code = stdout.channel.recv_exit_status()
+        experiment_result, result_error = _extract_experiment_result(output)
+
         match = re.search(r"::STATUS:.*:(PASS|FAIL):", output)
-        result = match.group(1) if match else ("SUCCESS" if exit_code == 0 else "FAILED")
-        state = "FINISHED" if exit_code == 0 and result != "FAIL" else "FAILED"
+        if exit_code != 0:
+            result = "FAILED"
+            state = "FAILED"
+        elif result_error:
+            result = "FAILED"
+            state = "FAILED"
+            error = f"{error}\n{result_error}".strip()
+        elif experiment_result is not None:
+            result = "PASS" if experiment_result["status"] == "passed" else "FAIL"
+            state = "FINISHED" if result == "PASS" else "FAILED"
+        else:
+            result = match.group(1) if match else "SUCCESS"
+            state = "FINISHED" if result != "FAIL" else "FAILED"
         update_execution(
             execution_id,
             state=state,
             result=result,
+            experiment_result=experiment_result,
             stdout=output,
             stderr=error,
             exit_code=exit_code,
