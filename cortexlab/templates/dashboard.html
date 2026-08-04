@@ -294,7 +294,7 @@
         <div>Node</div>
         <div>Job</div>
         <div>Task</div>
-        <div>Started</div>
+        <div>Node start time</div>
         <div>Status</div>
         <div>Action</div>
     </div>
@@ -710,6 +710,13 @@ async function updateExecutionGroups() {
                 document.getElementById(`group-result-${group.group_id}`).innerText = group.result || "-";
                 const runButton = document.getElementById(`group-run-${group.group_id}`);
                 runButton.disabled = group.state !== "READY_TO_RUN";
+                group.nodes.forEach(node => {
+                    const uploadRow = document.getElementById(`group-upload-${group.group_id}-${node}`);
+                    const uploadStatus = group.execution_ids?.[node]
+                        ? `uploaded (execution ${group.execution_ids[node]})`
+                        : "script not uploaded";
+                    uploadRow.querySelector("b").nextSibling.nodeValue = ` — ${uploadStatus}`;
+                });
             });
             return;
         }
@@ -717,7 +724,7 @@ async function updateExecutionGroups() {
         container.innerHTML = groups.map(group => {
             const uploads = group.execution_ids || {};
             const nodeRows = group.nodes.map(node => `
-                <li style="margin: 8px 0;">
+                <li id="group-upload-${group.group_id}-${node}" style="margin: 8px 0;">
                     <b>${node}</b> — ${uploads[node] ? `uploaded (execution ${uploads[node]})` : "script not uploaded"}<br>
                     <input type="file" id="group-script-${group.group_id}-${node}">
                     <button onclick="uploadGroupScript(${group.group_id}, '${node}')">Upload script</button>
@@ -817,7 +824,7 @@ async function updateExecution() {
 
         <div>${exe.task_id ?? "-"}</div>
 
-        <div>${exe.started ?? "-"}</div>
+        <div>${exe.execution_started_at ?? "Waiting to start"}</div>
 
         <div class="${statusClass}">
             ${exe.state}

@@ -167,7 +167,11 @@ def execute_script(execution_id, ready_barrier=None, start_at=None):
             if delay > 0:
                 time.sleep(delay)
 
-        update_execution(execution_id, state="RUNNING")
+        update_execution(
+            execution_id,
+            state="RUNNING",
+            execution_started_at=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
         if group_id is not None:
             update_execution_group(
                 group_id,

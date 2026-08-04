@@ -29,6 +29,8 @@ def create_execution(job_id, task_id, node, folder, script, runner, group_id=Non
             "stdout": "",
             "stderr": "",
             "log_path": None,
+            # Set only when this node leaves synchronization and starts running.
+            "execution_started_at": None,
             "started": time.strftime("%Y-%m-%d %H:%M:%S"),
             "ended": None,
         }
