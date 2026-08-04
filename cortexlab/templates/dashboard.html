@@ -152,14 +152,7 @@
         }
         .execution-header{
             display: grid;
-            grid-template-columns: 
-            220px
-            90px
-            80px
-            170px
-            150px
-            120px
-            120px;
+            grid-template-columns: minmax(140px, 2fr) repeat(3, minmax(70px, 1fr)) minmax(130px, 1.4fr) minmax(85px, 1fr) minmax(70px, auto);
             font-weight: bold;
             background: #2563eb;
             color: white;
@@ -176,9 +169,9 @@
 
 
         }
-        .execution-summery{
+        .execution-summary{
             display: grid;
-            grid-template-columns: 220px 90px 80px 170px 150px 120px 120px;
+            grid-template-columns: minmax(140px, 2fr) repeat(3, minmax(70px, 1fr)) minmax(130px, 1.4fr) minmax(85px, 1fr) minmax(70px, auto);
             align-items: center;
             padding: 14px;
             background: white;
@@ -674,11 +667,26 @@ async function createExecutionGroup(jobId, taskId) {
     if (data.success) updateExecutionGroups();
 }
 
+function groupNodeResult(group, node) {
+    const execution = group.node_results?.[node];
+    if (!execution) {
+        return "No execution result yet.";
+    }
+
+    const structured = execution.experiment_result;
+    const message = structured?.message ? `<br>${structured.message}` : "";
+    const metrics = structured?.metrics && Object.keys(structured.metrics).length
+        ? `<br>Metrics: ${Object.entries(structured.metrics)
+            .map(([key, value]) => `${key}: ${value}`).join(", ")}`
+        : "";
+    return `Execution ${execution.execution_id} | State: ${execution.state || "-"} | Result: ${execution.result || "-"}<br>
+        Started: ${execution.execution_started_at || "Waiting to start"}${message}${metrics}<br>
+        <button onclick="downloadExecution(${execution.execution_id})">Download log</button>`;
+}
+
 async function updateExecutionGroups() {
     try {
-        // Re-rendering replaces file inputs and clears their selected files.
-        // Preserve a user's pending upload until it is submitted or cancelled.
-        const hasPendingGroupFile = () => [...document
+                const hasPendingGroupFile = () => [...document
             .getElementById("execution-groups")
             .querySelectorAll('input[type="file"]')]
             .some(input => input.files && input.files.length > 0);
@@ -688,7 +696,7 @@ async function updateExecutionGroups() {
 
         const response = await fetch("http://127.0.0.1:5678/execution-groups");
         const data = await response.json();
-        // A refresh that began before the file was picked must not wipe it.
+        
         if (hasPendingGroupFile()) {
             return;
         }
@@ -716,6 +724,8 @@ async function updateExecutionGroups() {
                         ? `uploaded (execution ${group.execution_ids[node]})`
                         : "script not uploaded";
                     uploadRow.querySelector("b").nextSibling.nodeValue = ` — ${uploadStatus}`;
+                    document.getElementById(`group-node-result-${group.group_id}-${node}`).innerHTML =
+                        groupNodeResult(group, node);
                 });
             });
             return;
@@ -728,6 +738,9 @@ async function updateExecutionGroups() {
                     <b>${node}</b> — ${uploads[node] ? `uploaded (execution ${uploads[node]})` : "script not uploaded"}<br>
                     <input type="file" id="group-script-${group.group_id}-${node}">
                     <button onclick="uploadGroupScript(${group.group_id}, '${node}')">Upload script</button>
+                    <div id="group-node-result-${group.group_id}-${node}" style="margin-top: 6px;">
+                        ${groupNodeResult(group, node)}
+                    </div>
                 </li>`).join("");
             return `
                 <div class="card" data-execution-group-id="${group.group_id}" style="margin-bottom: 14px;">
@@ -840,11 +853,7 @@ async function updateExecution() {
                     Stop
                 </button>`
 
-                :
-
-                `<button onclick="downloadExecution(${exe.execution_id})">
-                    Download
-                </button>`
+                : "-"
             }
         </div>
 

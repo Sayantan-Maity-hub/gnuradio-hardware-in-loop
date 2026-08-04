@@ -1,4 +1,5 @@
-from flask import Flask, Response, render_template, request, jsonify
+from flask import Flask, Response, render_template, request, jsonify, send_file
+import tempfile
 from flask_cors import CORS
 from node_registry import get_nodes, get_node, update_job
 from reservation import reserve_nodes, walltime_to_seconds
@@ -28,6 +29,7 @@ from execution_group_registry import (
     get_active_node_conflicts,
 )
 from script_parser import script_parser
+from ssh_client import SSHConnection
 import threading
 from config import USERNAME, HOSTNAME
 import json
@@ -35,6 +37,8 @@ import os
 import re
 import logging
 import time
+import shlex
+import config
 
 app = Flask(__name__)
 
@@ -45,19 +49,13 @@ TEXT_SCRIPT_EXTENSIONS = {".py", ".sh", ".bash"}
 
 
 def normalize_script_line_endings(path):
-    """Convert Windows CRLF line endings to LF before a Linux-node upload.
-
-    Linux interprets the first line of an executable script as its shebang.
-    A CRLF-terminated shebang becomes ``python3\\r`` and cannot be executed.
-    """
+    
     if os.path.splitext(path)[1].lower() not in TEXT_SCRIPT_EXTENSIONS:
         return False
 
     with open(path, "rb") as script_file:
         content = script_file.read()
 
-    # Do not attempt text normalization on a binary file with a misleading
-    # extension.
     if b"\x00" in content:
         return False
 
@@ -326,6 +324,54 @@ def status_execution():
     return jsonify({"success": True, "count": len(executions), "data": executions}), 200
 
 
+@app.route("/execution/download/<int:execution_id>")
+def download_execution(execution_id):
+    execution = get_execution(execution_id)
+    if execution is None:
+        return jsonify({
+            "success": False,
+            "message": "Execution not found"
+        }), 404
+
+    remote_log = execution.get("log_path")
+    if not remote_log:
+        remote_log = (
+            f"/cortexlab/homes/{config.USERNAME}/"
+            f"{execution['folder']}/execution_{execution_id}.log"
+        )
+
+    filename = f"execution_{execution_id}_{execution['node']}.log"
+
+    temp_dir = tempfile.gettempdir()
+    local_log = os.path.join(temp_dir, filename)
+
+    remote = cortexlab_Remote()
+
+    try:
+        remote.download_file(remote_log, local_log)
+
+        return send_file(
+            local_log,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="text/plain",
+        )
+
+    except FileNotFoundError:
+        return jsonify({
+            "success": False,
+            "message": "Execution log not found"
+        }), 404
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Could not download execution log: {e}"
+        }), 500
+
+    finally:
+        remote.close()
+
 @app.route("/execution-groups", methods=["POST"])
 def create_execution_group_route():
     
@@ -383,6 +429,20 @@ def create_execution_group_route():
 @app.route("/execution-groups", methods=["GET"])
 def status_execution_groups():
     groups = get_all_execution_groups()
+    for group in groups.values():
+        group["node_results"] = {}
+        for node, execution_id in group["execution_ids"].items():
+            execution = get_execution(execution_id)
+            if execution is None:
+                continue
+            group["node_results"][node] = {
+                "execution_id": execution_id,
+                "state": execution.get("state"),
+                "result": execution.get("result"),
+                "execution_started_at": execution.get("execution_started_at"),
+                "ended": execution.get("ended"),
+                "experiment_result": execution.get("experiment_result"),
+            }
     return jsonify({"success": True, "count": len(groups), "data": groups}), 200
 
 

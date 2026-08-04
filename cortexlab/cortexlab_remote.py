@@ -61,5 +61,21 @@ class cortexlab_Remote:
         print(self.run(f"ls -l '{remote_folder}'"))
         sftp.close()
 
+    def download_file(self, remote_file, local_file):
+
+        sftp = self.ssh.open_sftp()
+
+        try:
+            local_dir = os.path.dirname(local_file)
+            if local_dir:
+                os.makedirs(local_dir, exist_ok=True)
+
+            print(f"Downloading: {remote_file} --> {local_file}")
+            sftp.get(remote_file, local_file)
+            print("DOWNLOAD SUCCESS")
+
+        finally:
+            sftp.close()
+
     def close(self):
         self.ssh.close()

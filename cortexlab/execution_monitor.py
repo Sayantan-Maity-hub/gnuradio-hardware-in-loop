@@ -132,6 +132,7 @@ def execute_script(execution_id, ready_barrier=None, start_at=None):
         ssh = SSHConnection(node)
         remote_script = f"/cortexlab/homes/{config.USERNAME}/{folder}/{script}"
         log_path = f"/cortexlab/homes/{config.USERNAME}/{folder}/execution_{execution_id}.log"
+        update_execution(execution_id, log_path=log_path)
 
         stdout, _ = ssh.run_on_node(f'test -f {shlex.quote(remote_script)} && echo OK')
         if stdout.read().decode().strip() != "OK":
