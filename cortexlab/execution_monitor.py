@@ -181,10 +181,16 @@ def execute_script(execution_id, ready_barrier=None, start_at=None):
                 started_at=time.strftime("%Y-%m-%d %H:%M:%S"),
             )
 
+        remote_dir = f"/cortexlab/homes/{config.USERNAME}/{folder}"
+        pipeline = (
+            f"source {shlex.quote(config.TOOLCHAIN_ENV)} && "
+            f"cd {shlex.quote(remote_dir)} && "
+            f"{shlex.quote(remote_script)} 2>&1 | tee {shlex.quote(log_path)}"
+        )
 
-        pipeline = f"{shlex.quote(remote_script)} 2>&1 | tee {shlex.quote(log_path)}"
-        run_cmd = f"bash -o pipefail -c {shlex.quote(pipeline)}"
-        stdout, stderr = ssh.run_on_node(run_cmd)
+        stdout, stderr = ssh.run_on_node(
+           f"bash -o pipefail -c {shlex.quote(pipeline)}"
+        )
         output_parts = []
         while True:
             line = stdout.readline()

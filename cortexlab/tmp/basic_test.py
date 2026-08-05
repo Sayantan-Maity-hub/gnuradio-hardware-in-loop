@@ -5,18 +5,18 @@ import time
 
 try:
     # STATE: PREPARING
-    time.sleep(15)
+    time.sleep(5)
 
     # STATE: READY
 
-    time.sleep(15)
+    time.sleep(5)
 
     # STATE: RUNNING
     packets_received = 0
-    for i in range(15):
+    for i in range(5):
         print(f"Packet {i}", flush=True)
         packets_received += 1
-        time.sleep(15)
+        time.sleep(5)
 
     # STATE: FINISHED
     print("Done", flush=True)
