@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CortexLab Status</title>
+<style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f4f6f8; color: #1f2933; font-family: Arial, sans-serif; }
+    main { max-width: 1280px; margin: 0 auto; padding: 28px 20px 40px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 18px; }
+    .connection { color: #52606d; font-size: 14px; }
+    section { margin-top: 20px; }
+    .section-title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .count { color: #627d98; font-size: 13px; }
+    .table-wrap { overflow-x: auto; background: #fff; border: 1px solid #d9e2ec; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #e5eaf0; text-align: left; font-size: 14px; vertical-align: top; }
+    th { background: #f7f9fb; color: #486581; font-size: 12px; text-transform: uppercase; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .empty { padding: 18px; color: #627d98; font-size: 14px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #e1e7ec; color: #334e68; font-size: 12px; font-weight: bold; white-space: nowrap; }
+    .state-online, .state-running, .state-finished, .state-completed, .state-success { background: #d9f7e7; color: #176b3a; }
+    .state-offline, .state-failed, .state-error { background: #fde2e2; color: #a61b1b; }
+    .state-waiting, .state-submitted, .state-starting, .state-pending { background: #fff1cc; color: #7a5600; }
+    .node-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .node { background: #fff; border: 1px solid #d9e2ec; border-radius: 6px; padding: 14px; }
+    .node-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .node h3 { font-size: 16px; }
+    .node p { color: #627d98; font-size: 13px; margin-top: 10px; overflow-wrap: anywhere; }
+    .node strong { color: #334e68; }
+    @media (max-width: 560px) { main { padding: 20px 14px 32px; } header { align-items: flex-start; flex-direction: column; gap: 6px; } }
+</style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>CortexLab Status</h1>
+        <p class="connection" id="connection">Loading status...</p>
+    </header>
+
+    <section>
+        <div class="section-title"><h2>Reservations</h2><span class="count" id="reservation-count"></span></div>
+        <div class="table-wrap" id="reservations"></div>
+    </section>
+
+    <section>
+        <div class="section-title"><h2>Nodes</h2><span class="count" id="node-count"></span></div>
+        <div class="node-grid" id="nodes"></div>
+    </section>
+
+    <section>
+        <div class="section-title"><h2>Experiments</h2><span class="count" id="experiment-count"></span></div>
+        <div class="table-wrap" id="experiments"></div>
+    </section>
+</main>
+<script>
+const stateClass = (value) => `state-${String(value || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+const value = (item) => item === undefined || item === null || item === "" ? "-" : String(item);
+
+function badge(state) {
+    const span = document.createElement("span");
+    span.className = `badge ${stateClass(state)}`;
+    span.textContent = value(state);
+    return span;
+}
+
+function showEmpty(container, message) {
+    container.replaceChildren();
+    const element = document.createElement("p");
+    element.className = "empty";
+    element.textContent = message;
+    container.append(element);
+}
+
+function renderTable(container, columns, rows) {
+    if (!rows.length) return showEmpty(container, "No status data available.");
+    const table = document.createElement("table");
+    const head = table.createTHead().insertRow();
+    columns.forEach(({ label }) => { const cell = document.createElement("th"); cell.textContent = label; head.append(cell); });
+    const body = table.createTBody();
+    rows.forEach(row => {
+        const tr = body.insertRow();
+        columns.forEach(({ get, isState }) => {
+            const cell = tr.insertCell();
+            const item = get(row);
+            cell.append(isState ? badge(item) : document.createTextNode(value(item)));
+        });
+    });
+    container.replaceChildren(table);
+}
+
+function renderReservations(data) {
+    const rows = Object.values(data || {}).sort((a, b) => String(b.job_id).localeCompare(String(a.job_id), undefined, { numeric: true }));
+    document.getElementById("reservation-count").textContent = `${rows.length} tracked`;
+    renderTable(document.getElementById("reservations"), [
+        { label: "Reservation ID", get: row => row.job_id },
+        { label: "Name", get: row => row.reservation_name },
+        { label: "Status", get: row => row.state, isState: true },
+        { label: "Assigned nodes", get: row => (row.assigned_nodes || []).join(", ") || "Waiting for allocation" },
+        { label: "Walltime", get: row => row.walltime },
+    ], rows);
+}
+
+function renderNodes(data) {
+    const entries = Object.entries(data || {}).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+    document.getElementById("node-count").textContent = `${entries.length} tracked`;
+    const container = document.getElementById("nodes");
+    if (!entries.length) return showEmpty(container, "No node status data available.");
+    const cards = entries.map(([name, info]) => {
+        const card = document.createElement("article"); card.className = "node";
+        const top = document.createElement("div"); top.className = "node-top";
+        const title = document.createElement("h3"); title.textContent = name;
+        top.append(title, badge(info.status)); card.append(top);
+        [["Hostname", info.hostname], ["Reservation ID", info.job && info.job.job_id], ["Experiment ID", info.experiment_id], ["Busy", info.busy ? "Yes" : "No"]].forEach(([label, detail]) => {
+            const p = document.createElement("p"), strong = document.createElement("strong");
+            strong.textContent = `${label}: `; p.append(strong, document.createTextNode(value(detail))); card.append(p);
+        });
+        return card;
+    });
+    container.replaceChildren(...cards);
+}
+
+function renderExperiments(data) {
+    const rows = Object.entries(data || {}).map(([id, experiment]) => ({ id, ...experiment }));
+    document.getElementById("experiment-count").textContent = `${rows.length} tracked`;
+    renderTable(document.getElementById("experiments"), [
+        { label: "Experiment ID", get: row => row.id },
+        { label: "Experiment", get: row => row.experiment_name },
+        { label: "Status", get: row => row.state, isState: true },
+        { label: "Nodes", get: row => Object.keys(row.nodes || {}).join(", ") },
+        { label: "Result", get: row => row.overall_result },
+        { label: "Started", get: row => row.started },
+    ], rows);
+}
+
+async function fetchStatus(url) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${url} returned ${response.status}`);
+    return response.json();
+}
+
+async function refresh() {
+    try {
+        const [reservations, nodes, experiments] = await Promise.all([
+            fetchStatus("/status/reservations"), fetchStatus("/status/nodes"), fetchStatus("/status/experiments"),
+        ]);
+        renderReservations(reservations.data);
+        renderNodes(nodes.data);
+        renderExperiments(experiments.data);
+        document.getElementById("connection").textContent = `Connected. Updated ${new Date().toLocaleTimeString()}`;
+    } catch (error) {
+        document.getElementById("connection").textContent = "Unable to load controller status.";
+        console.error(error);
+    }
+}
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
