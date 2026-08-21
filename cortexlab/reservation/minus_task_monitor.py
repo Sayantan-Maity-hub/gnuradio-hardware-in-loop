@@ -15,6 +15,7 @@ task_monitor_lock = threading.Lock()
 
 node_monitor_lock = threading.Lock()
 
+
 def update_task(job_id, task_id, **kwargs):
 
     with task_monitor_lock:
@@ -51,18 +52,19 @@ def minus_task_monitor(job_id, task_id):
             stdout, stderr = remote.run(f"minus task info {task_id}")
             output = stdout.read().decode()
             print(output)
-            
+
             if "state=RUNNING" in output:
                 state = "RUNNING"
                 update_task(job_id, task_id, state=state)
 
                 # Node state monitor thread
                 if node_monitor_thread is None or not node_monitor_thread.is_alive():
-                    node_monitor_thread = threading.Thread(target=monitor_nodes, args=(job_id,), daemon=True)
+                    node_monitor_thread = threading.Thread(
+                        target=monitor_nodes, args=(job_id,), daemon=True
+                    )
                     node_monitor_thread.start()
                     print("node monitor started().")
 
-                
             elif "state=FINISHED" in output:
                 state = "FINISHED"
                 update_task(job_id, task_id, state=state)
@@ -93,7 +95,7 @@ def minus_task_monitor(job_id, task_id):
                 update_task(job_id, task_id, state=state)
 
         except Exception as e:
-            
+
             if remote:
                 try:
                     remote.close()

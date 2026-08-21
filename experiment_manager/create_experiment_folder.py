@@ -4,12 +4,12 @@ import json
 from cortexlab.execution.execution_registy import update_execution
 
 
-def create_experiment_folder( experiment_id, node_files, parameters, root_files = None):
+def create_experiment_folder(experiment_id, node_files, parameters, root_files=None):
 
     # Find project root
-    
+
     if root_files is None:
-        root_files =[]
+        root_files = []
 
     current_file = os.path.abspath(__file__)
 
@@ -26,7 +26,6 @@ def create_experiment_folder( experiment_id, node_files, parameters, root_files 
 
     experiment_folder = os.path.join(base_folder, str(experiment_id))
 
-
     # Create clean experiment directory
 
     if os.path.exists(experiment_folder):
@@ -41,9 +40,7 @@ def create_experiment_folder( experiment_id, node_files, parameters, root_files 
         if not os.path.isfile(file_path):
             raise FileNotFoundError(f"Experiment root file not found: {file_path}")
 
-        destination = os.path.join(
-            experiment_folder,
-            os.path.basename(file_path))
+        destination = os.path.join(experiment_folder, os.path.basename(file_path))
 
         print(f"Copy root file: {file_path} -> {destination}")
 
@@ -72,7 +69,6 @@ def create_experiment_folder( experiment_id, node_files, parameters, root_files 
 
             print(f"Copied: {file_path} -> {destination}")
 
-
     # Create parameters.json
 
     parameters_file = os.path.join(experiment_folder, "parameters.json")
@@ -81,10 +77,12 @@ def create_experiment_folder( experiment_id, node_files, parameters, root_files 
 
         json.dump(parameters, f, indent=4)
 
-    #update execution registry
+    # update execution registry
     updated = update_execution(experiment_id, local_folder=experiment_folder)
     if not updated:
-        raise RuntimeError(f"Experiment {experiment_id} not found in execution registry")
+        raise RuntimeError(
+            f"Experiment {experiment_id} not found in execution registry"
+        )
 
     # Print result
 

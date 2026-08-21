@@ -40,116 +40,118 @@ def generate_scenario(scenario_folder, nodes, duration, task_description, docker
 
 def minus_create_task(remote_folder, job_id):
     while True:
-            reservation = get_reservation(job_id)
-    
-            if reservation is None:
-                return
-            
-            remote = cortexlab_Remote()
-            try:
-                 stdout, stderr = remote.run(f"minus task create -f '{remote_folder}'")
-                 output = stdout.read().decode()
-                 
-                 print(output)
+        reservation = get_reservation(job_id)
 
-                 return
-            finally:
-                 remote.close()
+        if reservation is None:
+            return
+
+        remote = cortexlab_Remote()
+        try:
+            stdout, stderr = remote.run(f"minus task create -f '{remote_folder}'")
+            output = stdout.read().decode()
+
+            print(output)
+
+            return
+        finally:
+            remote.close()
 
 
 def minus_submit_task(job_id, remote_folder):
 
-        remote = cortexlab_Remote()
-        try:
-            stdout, stderr = remote.run(f"minus task submit {remote_folder}.task")
+    remote = cortexlab_Remote()
+    try:
+        stdout, stderr = remote.run(f"minus task submit {remote_folder}.task")
 
-            output = stdout.read().decode()
+        output = stdout.read().decode()
 
-        finally:
-             
-             remote.close()
+    finally:
 
-        task_id = output.strip()
+        remote.close()
 
-            # Update the task entry
-        reservation = get_reservation(job_id)
+    task_id = output.strip()
 
-        for task in reservation["tasks"]:
-            if task["folder"] == remote_folder:
-                task["task_id"] = task_id
-                task["state"] = "SUBMITTED"
-                break
+    # Update the task entry
+    reservation = get_reservation(job_id)
 
-        update_reservation(job_id, tasks=reservation["tasks"])
+    for task in reservation["tasks"]:
+        if task["folder"] == remote_folder:
+            task["task_id"] = task_id
+            task["state"] = "SUBMITTED"
+            break
 
-        threading.Thread(
-            target=minus_task_monitor,
-            args=(job_id, task_id),
-            daemon=True,
-        ).start()
-        return task_id
+    update_reservation(job_id, tasks=reservation["tasks"])
+
+    threading.Thread(
+        target=minus_task_monitor,
+        args=(job_id, task_id),
+        daemon=True,
+    ).start()
+    return task_id
+
 
 def create_task_for_reservation(job_id):
 
-     reservation = get_reservation(job_id)
+    reservation = get_reservation(job_id)
 
-     if reservation is None:
-          raise RuntimeError(f"Reservation {job_id} not found")
+    if reservation is None:
+        raise RuntimeError(f"Reservation {job_id} not found")
 
+    # Wait until the reservation is in the "running" state before proceeding
+    print(f"waiting for reservation {job_id} to be in the 'running' state.")
+    while True:
+        state = reservation["state"]
+        if state != "Running":
 
-     # Wait until the reservation is in the "running" state before proceeding
-     print(f"waiting for reservation {job_id} to be in the 'running' state.")
-     while True:
-          state = reservation["state"]
-          if state != "Running":
-               
-               print(f"waiting time {reservation["waiting_time"]} minute.")
-               time.sleep(2)
-               continue
-          else:
-               break
-     nodes = reservation.get("assigned_nodes", [])
+            print(f"waiting time {reservation["waiting_time"]} minute.")
+            time.sleep(2)
+            continue
+        else:
+            break
+    nodes = reservation.get("assigned_nodes", [])
 
-     if not nodes:
-          raise RuntimeError(f"No assigned nodes found for reservation {job_id}")
+    if not nodes:
+        raise RuntimeError(f"No assigned nodes found for reservation {job_id}")
 
-     # artifact for scenario generation
-     task_description = reservation["reservation_name"]
-     safe_desc = re.sub(r"[^a-zA-Z0-9_-]", "_", task_description.strip())
-     local_folder = os.path.join(str(job_id), safe_desc)
-     remote_folder = f"{job_id}/{safe_desc}"
-     nodes = reservation["assigned_nodes"]
-     duration = walltime_to_seconds(reservation["walltime"])
+    # artifact for scenario generation
+    task_description = reservation["reservation_name"]
+    safe_desc = re.sub(r"[^a-zA-Z0-9_-]", "_", task_description.strip())
+    local_folder = os.path.join(str(job_id), safe_desc)
+    remote_folder = f"{job_id}/{safe_desc}"
+    nodes = reservation["assigned_nodes"]
+    duration = walltime_to_seconds(reservation["walltime"])
 
-     # Function call for scenario generationa
-     generate_scenario(local_folder, nodes, duration, task_description)
+    # Function call for scenario generationa
+    generate_scenario(local_folder, nodes, duration, task_description)
 
-     # Uploading the scenario to remote server and creating and submitting the task.
-     remote = cortexlab_Remote()
-     try:
-          remote.upload_folder(local_folder, remote_folder)
-     finally:
-          remote.close()
+    # Uploading the scenario to remote server and creating and submitting the task.
+    remote = cortexlab_Remote()
+    try:
+        remote.upload_folder(local_folder, remote_folder)
+    finally:
+        remote.close()
 
-     # Function call for creating and submitting the task.
-     minus_create_task(remote_folder, job_id)
-     task_id = minus_submit_task(job_id, remote_folder)
+    # Function call for creating and submitting the task.
+    minus_create_task(remote_folder, job_id)
+    task_id = minus_submit_task(job_id, remote_folder)
 
-     reservation = get_reservation(job_id)
+    reservation = get_reservation(job_id)
 
-     tasks = reservation.get("tasks", [])
+    tasks = reservation.get("tasks", [])
 
-     task_entry = {
+    task_entry = {
         "task_id": task_id,
         "description": task_description,
         "state": "CREATED",
         "folder": remote_folder,
-        }
+    }
 
-     tasks.append(task_entry)
+    tasks.append(task_entry)
 
-     #update the reservation with the new task entry
-     update_reservation(job_id, tasks=tasks,)
+    # update the reservation with the new task entry
+    update_reservation(
+        job_id,
+        tasks=tasks,
+    )
 
-     return task_id
-
+    return task_id

@@ -46,17 +46,13 @@ def load_parameters():
     print(f"Loading parameters from: {parameters_path}")
 
     if not os.path.isfile(parameters_path):
-        raise FileNotFoundError(
-            f"parameters.json not found: {parameters_path}"
-        )
+        raise FileNotFoundError(f"parameters.json not found: {parameters_path}")
 
     with open(parameters_path, "r", encoding="utf-8") as file:
         parameters = json.load(file)
 
     if not isinstance(parameters, dict):
-        raise ValueError(
-            "parameters.json must contain a JSON object"
-        )
+        raise ValueError("parameters.json must contain a JSON object")
 
     print("Loaded parameters:")
     print(json.dumps(parameters, indent=2))
@@ -100,7 +96,9 @@ class tx_chain(gr.top_block):
             self.captured_samp = int(self.samp_rate * duration)
 
         else:
-            raise ValueError("parameters.json must contain either 'capture_samples' or 'duration'")
+            raise ValueError(
+                "parameters.json must contain either 'capture_samples' or 'duration'"
+            )
 
         print("\nTX configuration:")
         print(f"  Sample rate     : {self.samp_rate}")
@@ -124,13 +122,9 @@ class tx_chain(gr.top_block):
             "",
         )
 
-        self.uhd_usrp_sink_0.set_samp_rate(
-            self.samp_rate
-        )
+        self.uhd_usrp_sink_0.set_samp_rate(self.samp_rate)
 
-        self.uhd_usrp_sink_0.set_time_unknown_pps(
-            uhd.time_spec(0)
-        )
+        self.uhd_usrp_sink_0.set_time_unknown_pps(uhd.time_spec(0))
 
         self.uhd_usrp_sink_0.set_center_freq(
             self.center_freq,
@@ -185,13 +179,9 @@ class tx_chain(gr.top_block):
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
 
-        self.analog_sig_source_x_0.set_sampling_freq(
-            self.samp_rate
-        )
+        self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
 
-        self.uhd_usrp_sink_0.set_samp_rate(
-            self.samp_rate
-        )
+        self.uhd_usrp_sink_0.set_samp_rate(self.samp_rate)
 
     def get_tone_frequency(self):
         return self.tone_frequency
@@ -199,9 +189,7 @@ class tx_chain(gr.top_block):
     def set_tone_frequency(self, tone_frequency):
         self.tone_frequency = tone_frequency
 
-        self.analog_sig_source_x_0.set_frequency(
-            self.tone_frequency
-        )
+        self.analog_sig_source_x_0.set_frequency(self.tone_frequency)
 
     def get_gain(self):
         return self.gain
@@ -231,9 +219,7 @@ class tx_chain(gr.top_block):
     def set_amplitude(self, amplitude):
         self.amplitude = amplitude
 
-        self.analog_sig_source_x_0.set_amplitude(
-            self.amplitude
-        )
+        self.analog_sig_source_x_0.set_amplitude(self.amplitude)
 
     def get_captured_samp(self):
         return self.captured_samp
@@ -241,9 +227,7 @@ class tx_chain(gr.top_block):
     def set_captured_samp(self, captured_samp):
         self.captured_samp = int(captured_samp)
 
-        self.blocks_head_0.set_length(
-            self.captured_samp
-        )
+        self.blocks_head_0.set_length(self.captured_samp)
 
 
 def main(top_block_cls=tx_chain):
@@ -295,9 +279,7 @@ def main(top_block_cls=tx_chain):
 
     print("TX flowgraph finished.")
 
-    print(
-        '::RESULT::{"status":"passed","metrics":{}}'
-    )
+    print('::RESULT::{"status":"passed","metrics":{}}')
 
 
 if __name__ == "__main__":

@@ -4,18 +4,21 @@ import shlex
 import threading
 import time
 
-from cortexlab.execution.execution_registy import (get_execution, update_execution, update_execution_node,)
+from cortexlab.execution.execution_registy import (
+    get_execution,
+    update_execution,
+    update_execution_node,
+)
 
 from cortexlab.nodes.node_registry import get_node
 from .execute_analysis import execute_analysis
 
 from ..remote_connections.ssh_connection import SSHConnection
 
-
 RESULT_PREFIX = "::RESULT::"
 
 
-def _extract_experiment_result(output): 
+def _extract_experiment_result(output):
 
     result = None
 
@@ -24,7 +27,7 @@ def _extract_experiment_result(output):
         if not line.startswith(RESULT_PREFIX):
             continue
 
-        payload = line[len(RESULT_PREFIX):].strip()
+        payload = line[len(RESULT_PREFIX) :].strip()
 
         try:
             parsed = json.loads(payload)
@@ -36,7 +39,7 @@ def _extract_experiment_result(output):
             return (None, "Experiment result must be a JSON object")
 
         if parsed.get("status") not in {"passed", "failed"}:
-            return (None, 'Experiment result status must be ''"passed" or "failed"')
+            return (None, "Experiment result status must be " '"passed" or "failed"')
 
         if "metrics" not in parsed:
             parsed["metrics"] = {}
@@ -49,12 +52,12 @@ def _extract_experiment_result(output):
     return result, None
 
 
-''' Check whether all primary experiment nodes are finished. start analysis . 
+""" Check whether all primary experiment nodes are finished. start analysis . 
 execute_analysis() will download result.json produce by analysis script.
-if any primary node fails experiment become failed'''
-    
+if any primary node fails experiment become failed"""
+
+
 def finish_experiment_if_complete(experiment_id):
-    
 
     experiment = get_execution(experiment_id)
 
@@ -79,20 +82,20 @@ def finish_experiment_if_complete(experiment_id):
             experiment_id,
             state="FAILED",
             overall_result="FAILED",
-            ended=time.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            ended=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
         return
 
     # Wait until ALL primary nodes finish
     while True:
-        if not all( node.get("state") == "FINISHED" for node in node_executions):
+        if not all(node.get("state") == "FINISHED" for node in node_executions):
             continue
 
         # Check primary node results
-        passed = all( node.get("result") in { "PASS", "SUCCESS"} for node in node_executions)
+        passed = all(
+            node.get("result") in {"PASS", "SUCCESS"} for node in node_executions
+        )
 
         if not passed:
 
@@ -100,22 +103,23 @@ def finish_experiment_if_complete(experiment_id):
                 experiment_id,
                 state="FAILED",
                 overall_result="FAILED",
-                ended=time.strftime("%Y-%m-%d %H:%M:%S")
+                ended=time.strftime("%Y-%m-%d %H:%M:%S"),
             )
 
         # TX/RX successfully finished
-        print( f"Experiment {experiment_id}: TX/RX finished successfully.")
+        print(f"Experiment {experiment_id}: TX/RX finished successfully.")
 
-        #Execute analysis script
-        update_execution(experiment_id, state="NODE_EXECUTION_FINISHED", overall_result=passed)
+        # Execute analysis script
+        update_execution(
+            experiment_id, state="NODE_EXECUTION_FINISHED", overall_result=passed
+        )
 
         return passed
 
 
-
 # FAIL EXPERIMENT
 def _fail_execution(experiment_id, message, ready_barrier=None, failed_node=None):
-    
+
     execution = get_execution(experiment_id)
 
     if execution is None:
@@ -140,9 +144,7 @@ def _fail_execution(experiment_id, message, ready_barrier=None, failed_node=None
         state="FAILED",
         overall_result="FAILED",
         stderr=message,
-        ended=time.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ),
+        ended=time.strftime("%Y-%m-%d %H:%M:%S"),
     )
 
     # Break synchronization barrier

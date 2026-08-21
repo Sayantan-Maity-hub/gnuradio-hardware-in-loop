@@ -1,4 +1,4 @@
-'''This script start the flask server in thread and stop by keyboard interrupt'''
+"""This script start the flask server in thread and stop by keyboard interrupt"""
 
 import time
 import threading
@@ -14,7 +14,6 @@ def main():
     print("Flask API available at:")
     print("http://127.0.0.1:5678")
 
-    
     try:
         while True:
             time.sleep(1)

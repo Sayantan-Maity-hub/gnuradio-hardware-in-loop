@@ -21,10 +21,10 @@ from gnuradio import blocks
 from gnuradio import gr
 from gnuradio import uhd
 
-
 # ============================================================
 # Parameter Loading
 # ============================================================
+
 
 def load_parameters():
 
@@ -36,11 +36,7 @@ def load_parameters():
     #
     # <experiment_id>/parameters.json
 
-    experiment_dir = os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        )
-    )
+    experiment_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     parameter_file = os.path.join(experiment_dir, "parameters.json")
 
@@ -64,19 +60,14 @@ def load_parameters():
 # RX Flowgraph
 # ============================================================
 
+
 class rx_chain(gr.top_block):
 
     def __init__(self):
 
-        gr.top_block.__init__(
-            self,
-            "RX Flowgraph",
-            catch_exceptions=True
-        )
+        gr.top_block.__init__(self, "RX Flowgraph", catch_exceptions=True)
 
-        self.flowgraph_started = (
-            threading.Event()
-        )
+        self.flowgraph_started = threading.Event()
 
         # ----------------------------------------------------
         # Load parameters
@@ -92,21 +83,19 @@ class rx_chain(gr.top_block):
 
         self.duration = duration = float(parameters.get("duration", 1))
 
-        self.gain = gain = float(
-            parameters.get("gain", 0))
+        self.gain = gain = float(parameters.get("gain", 0))
 
-        self.center_freq = center_freq = float(
-            parameters.get("center_frequency", 0))
+        self.center_freq = center_freq = float(parameters.get("center_frequency", 0))
 
         # If capture_samples exists in parameters.json, use it. Otherwise: capture_samples = sample_rate * duration
 
         if "capture_samples" in parameters:
 
-            self.capture_sample = (capture_sample) = int(parameters["capture_samples"])
+            self.capture_sample = capture_sample = int(parameters["capture_samples"])
 
         else:
 
-            self.capture_sample = (capture_sample) = int(samp_rate * duration)
+            self.capture_sample = capture_sample = int(samp_rate * duration)
 
         # RX configuration
 
@@ -132,33 +121,19 @@ class rx_chain(gr.top_block):
             ),
         )
 
-        self.uhd_usrp_source_0.set_samp_rate(
-            samp_rate
-        )
+        self.uhd_usrp_source_0.set_samp_rate(samp_rate)
 
-        self.uhd_usrp_source_0.set_center_freq(
-            center_freq,
-            0
-        )
+        self.uhd_usrp_source_0.set_center_freq(center_freq, 0)
 
-        self.uhd_usrp_source_0.set_antenna(
-            "RX2",
-            0
-        )
+        self.uhd_usrp_source_0.set_antenna("RX2", 0)
 
-        self.uhd_usrp_source_0.set_gain(
-            gain,
-            0
-        )
+        self.uhd_usrp_source_0.set_gain(gain, 0)
 
         # ----------------------------------------------------
         # Head
         # ----------------------------------------------------
 
-        self.blocks_head_0 = blocks.head(
-            gr.sizeof_gr_complex * 1,
-            capture_sample
-        )
+        self.blocks_head_0 = blocks.head(gr.sizeof_gr_complex * 1, capture_sample)
 
         # ----------------------------------------------------
         # File sink
@@ -168,56 +143,25 @@ class rx_chain(gr.top_block):
         # <experiment_id>/rx.iq
         # ----------------------------------------------------
 
-        experiment_dir = os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__)
-            )
-        )
+        experiment_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        self.rx_file = os.path.join(
-            experiment_dir,
-            "rx.iq"
-        )
+        self.rx_file = os.path.join(experiment_dir, "rx.iq")
 
-        print(
-            f"RX output file: {self.rx_file}"
-        )
+        print(f"RX output file: {self.rx_file}")
 
         self.blocks_file_sink_0 = blocks.file_sink(
-            gr.sizeof_gr_complex * 1,
-            self.rx_file,
-            False
+            gr.sizeof_gr_complex * 1, self.rx_file, False
         )
 
-        self.blocks_file_sink_0.set_unbuffered(
-            False
-        )
+        self.blocks_file_sink_0.set_unbuffered(False)
 
         # ====================================================
         # Connections
         # ====================================================
 
-        self.connect(
-            (
-                self.uhd_usrp_source_0,
-                0
-            ),
-            (
-                self.blocks_head_0,
-                0
-            )
-        )
+        self.connect((self.uhd_usrp_source_0, 0), (self.blocks_head_0, 0))
 
-        self.connect(
-            (
-                self.blocks_head_0,
-                0
-            ),
-            (
-                self.blocks_file_sink_0,
-                0
-            )
-        )
+        self.connect((self.blocks_head_0, 0), (self.blocks_file_sink_0, 0))
 
     # ========================================================
     # Getters / Setters
@@ -227,133 +171,86 @@ class rx_chain(gr.top_block):
 
         return self.samp_rate
 
-    def set_samp_rate(
-        self,
-        samp_rate
-    ):
+    def set_samp_rate(self, samp_rate):
 
         self.samp_rate = samp_rate
 
-        self.uhd_usrp_source_0.set_samp_rate(
-            self.samp_rate
-        )
+        self.uhd_usrp_source_0.set_samp_rate(self.samp_rate)
 
     def get_duration(self):
 
         return self.duration
 
-    def set_duration(
-        self,
-        duration
-    ):
+    def set_duration(self, duration):
 
         self.duration = duration
 
-        self.set_capture_sample(
-            int(
-                self.samp_rate *
-                self.duration
-            )
-        )
+        self.set_capture_sample(int(self.samp_rate * self.duration))
 
     def get_gain(self):
 
         return self.gain
 
-    def set_gain(
-        self,
-        gain
-    ):
+    def set_gain(self, gain):
 
         self.gain = gain
 
-        self.uhd_usrp_source_0.set_gain(
-            self.gain,
-            0
-        )
+        self.uhd_usrp_source_0.set_gain(self.gain, 0)
 
     def get_center_freq(self):
 
         return self.center_freq
 
-    def set_center_freq(
-        self,
-        center_freq
-    ):
+    def set_center_freq(self, center_freq):
 
         self.center_freq = center_freq
 
-        self.uhd_usrp_source_0.set_center_freq(
-            self.center_freq,
-            0
-        )
+        self.uhd_usrp_source_0.set_center_freq(self.center_freq, 0)
 
     def get_capture_sample(self):
 
         return self.capture_sample
 
-    def set_capture_sample(
-        self,
-        capture_sample
-    ):
+    def set_capture_sample(self, capture_sample):
 
         self.capture_sample = capture_sample
 
-        self.blocks_head_0.set_length(
-            self.capture_sample
-        )
+        self.blocks_head_0.set_length(self.capture_sample)
 
 
 # ============================================================
 # Main
 # ============================================================
 
-def main(
-    top_block_cls=rx_chain,
-    options=None
-):
+
+def main(top_block_cls=rx_chain, options=None):
 
     print("Starting RX flowgraph...")
 
     tb = top_block_cls()
 
-    def sig_handler(
-        sig=None,
-        frame=None
-    ):
+    def sig_handler(sig=None, frame=None):
 
-        print(
-            "Stopping RX flowgraph..."
-        )
+        print("Stopping RX flowgraph...")
 
         tb.stop()
         tb.wait()
 
         sys.exit(0)
 
-    signal.signal(
-        signal.SIGINT,
-        sig_handler
-    )
+    signal.signal(signal.SIGINT, sig_handler)
 
-    signal.signal(
-        signal.SIGTERM,
-        sig_handler
-    )
+    signal.signal(signal.SIGTERM, sig_handler)
 
     tb.start()
 
     tb.flowgraph_started.set()
 
-    print(
-        "RX flowgraph running."
-    )
+    print("RX flowgraph running.")
 
     tb.wait()
 
-    print(
-        "RX flowgraph finished."
-    )
+    print("RX flowgraph finished.")
 
     print(
         "::RESULT::"
@@ -361,11 +258,9 @@ def main(
             {
                 "status": "passed",
                 "metrics": {
-                    "capture_samples":
-                        tb.get_capture_sample(),
-                    "sample_rate":
-                        tb.get_samp_rate(),
-                }
+                    "capture_samples": tb.get_capture_sample(),
+                    "sample_rate": tb.get_samp_rate(),
+                },
             }
         )
     )

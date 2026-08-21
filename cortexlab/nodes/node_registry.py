@@ -2,7 +2,6 @@ import threading
 import time
 from ..reservation.reservation_registry import get_reservation
 
-
 registry = {}
 lock = threading.Lock()
 
@@ -71,10 +70,7 @@ def update_node(node, data=None, **kwargs):
 
                 if line.startswith("PRETTY_NAME="):
 
-                    pretty = line.split(
-                        "=",
-                        1
-                    )[1].strip('"')
+                    pretty = line.split("=", 1)[1].strip('"')
 
                     break
 
@@ -82,17 +78,11 @@ def update_node(node, data=None, **kwargs):
 
         registry[node] = {
             "hostname": data.get("hostname", existing.get("hostname", node)),
-
             "status": data.get("status", existing.get("status", None)),
-
             "os": pretty,
-
             "job": data.get("job", existing_job),
-
             "busy": data.get("busy", existing_busy),
-
             "execution_id": data.get("execution_id", existing_execution_id),
-
             "experiment_id": data.get("experiment_id", existing_experiment_id),
         }
 
@@ -188,6 +178,5 @@ def wait_for_node_status(job_id, timeout=60):
         time.sleep(1)
 
     raise TimeoutError(
-        f"Assigned nodes did not become ONLINE "
-        f"within {timeout} seconds"
+        f"Assigned nodes did not become ONLINE " f"within {timeout} seconds"
     )

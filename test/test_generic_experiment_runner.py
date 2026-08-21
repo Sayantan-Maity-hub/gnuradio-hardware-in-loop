@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 # Project root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -28,7 +27,7 @@ def test_experiment(experiment_name):
 
     # Check experiment directory
 
-    experiment_dir = (EXPERIMENTS_ROOT / "hil_experiments" / experiment_name)
+    experiment_dir = EXPERIMENTS_ROOT / "hil_experiments" / experiment_name
 
     print(f"\nExperiment directory:")
     print(f"  {experiment_dir}")
@@ -54,7 +53,9 @@ def test_experiment(experiment_name):
 
     # Find Python node scripts
 
-    node_scripts = sorted(file for file in node_dir.iterdir() if file.is_file() and file.suffix == ".py")
+    node_scripts = sorted(
+        file for file in node_dir.iterdir() if file.is_file() and file.suffix == ".py"
+    )
 
     print("\nNode scripts:")
 

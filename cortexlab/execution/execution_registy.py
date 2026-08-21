@@ -44,47 +44,31 @@ def create_experiment_registry(
             "stderr": "",
             "log_path": None,
             "execution_started_at": None,
-            "started": time.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "started": time.strftime("%Y-%m-%d %H:%M:%S"),
             "ended": None,
         }
 
-        
-def update_execution(
-    execution_id,
-    **kwargs
-):
+
+def update_execution(execution_id, **kwargs):
     with lock:
 
         if execution_id not in execution_registry:
             return False
 
-        execution_registry[
-            execution_id
-        ].update(kwargs)
+        execution_registry[execution_id].update(kwargs)
 
         return True
 
 
-def update_execution_node(
-    experiment_id,
-    node,
-    **kwargs
-):
+def update_execution_node(experiment_id, node, **kwargs):
     with lock:
 
-        experiment = execution_registry.get(
-            experiment_id
-        )
+        experiment = execution_registry.get(experiment_id)
 
         if experiment is None:
             return False
 
-        nodes = experiment.get(
-            "nodes",
-            {}
-        )
+        nodes = experiment.get("nodes", {})
 
         if node not in nodes:
             return False
@@ -99,18 +83,14 @@ def clear_execution(experiment_id):
     with lock:
 
         if experiment_id in execution_registry:
-            del execution_registry[
-                experiment_id
-            ]
+            del execution_registry[experiment_id]
 
 
 def get_execution(experiment_id):
 
     with lock:
 
-        return execution_registry.get(
-            experiment_id
-        )
+        return execution_registry.get(experiment_id)
 
 
 def get_all_execution():

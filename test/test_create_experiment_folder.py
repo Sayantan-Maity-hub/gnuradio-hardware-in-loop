@@ -120,18 +120,12 @@ def main():
         print("\n[3] Preparing execution registry...")
 
         try:
-            registry_result = update_execution(
-                experiment_id,
-                status="CREATED"
-            )
+            registry_result = update_execution(experiment_id, status="CREATED")
 
             print(f"  update_execution() result: {registry_result}")
 
         except TypeError:
-            print(
-                "  WARNING: update_execution() does not accept "
-                "status parameter."
-            )
+            print("  WARNING: update_execution() does not accept " "status parameter.")
             print(
                 "  The test will continue, but the registry may need "
                 "the experiment to exist beforehand."
@@ -199,9 +193,7 @@ def main():
                 print(f"  ✅ {filename}")
             else:
                 print(f"  ❌ {filename}")
-                raise AssertionError(
-                    f"Missing root file: {path}"
-                )
+                raise AssertionError(f"Missing root file: {path}")
 
         # -----------------------------------------------------
         # 8. Verify node folders
@@ -216,31 +208,21 @@ def main():
 
         for node, files in expected_nodes.items():
 
-            node_folder = os.path.join(
-                experiment_folder,
-                node
-            )
+            node_folder = os.path.join(experiment_folder, node)
 
             if not os.path.isdir(node_folder):
-                raise AssertionError(
-                    f"Node folder missing: {node_folder}"
-                )
+                raise AssertionError(f"Node folder missing: {node_folder}")
 
             print(f"  ✅ {node}/")
 
             for filename in files:
 
-                path = os.path.join(
-                    node_folder,
-                    filename
-                )
+                path = os.path.join(node_folder, filename)
 
                 if os.path.isfile(path):
                     print(f"      ✅ {filename}")
                 else:
-                    raise AssertionError(
-                        f"Missing file: {path}"
-                    )
+                    raise AssertionError(f"Missing file: {path}")
 
         # -----------------------------------------------------
         # 9. Verify parameters.json
@@ -248,16 +230,9 @@ def main():
 
         print("\n[8] Checking parameters.json...")
 
-        parameters_file = os.path.join(
-            experiment_folder,
-            "parameters.json"
-        )
+        parameters_file = os.path.join(experiment_folder, "parameters.json")
 
-        with open(
-            parameters_file,
-            "r",
-            encoding="utf-8"
-        ) as f:
+        with open(parameters_file, "r", encoding="utf-8") as f:
             saved_parameters = json.load(f)
 
         if saved_parameters != parameters:

@@ -10,17 +10,17 @@ from .reservation_registry import (
 
 
 def parse_assigned_nodes(job_info):
-    
+
     for field in ("assigned_hostnames", "assigned_network_address"):
-        match = re.search(
-            rf"(?im)^[ \t]*{field}[ \t]*=[ \t]*([^\r\n]*)", job_info
-        )
+        match = re.search(rf"(?im)^[ \t]*{field}[ \t]*=[ \t]*([^\r\n]*)", job_info)
         if not match:
             continue
 
         nodes = [
             f"node{number}"
-            for number in re.findall(r"\bmnode(\d+)(?:\.cortexlab\.fr)?\b", match.group(1))
+            for number in re.findall(
+                r"\bmnode(\d+)(?:\.cortexlab\.fr)?\b", match.group(1)
+            )
         ]
         if nodes:
             return nodes

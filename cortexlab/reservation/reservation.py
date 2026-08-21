@@ -18,11 +18,11 @@ def reserve_nodes(hostname, username, walltime, reservation_name):
 
     print("\n======= Submitting OAR Job =======")
 
-    #Controller credentials
+    # Controller credentials
     if username:
         config.USERNAME = username
 
-    if hostname:     
+    if hostname:
         config.HOSTNAME = hostname
 
     if not config.USERNAME or not config.HOSTNAME:
@@ -76,7 +76,7 @@ def reserve_nodes(hostname, username, walltime, reservation_name):
         job_id=job_id,
         username=username,
         walltime=walltime,
-        reservation_name=reservation_name
+        reservation_name=reservation_name,
     )
     print(f"\nReservation submitted successfully")
     print(get_reservation(job_id))

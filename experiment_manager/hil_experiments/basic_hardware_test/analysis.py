@@ -10,8 +10,7 @@ def load_parameters(parameters_path):
     if not os.path.exists(parameters_path):
         return {}
 
-    with open(
-        parameters_path, "r", encoding="utf-8") as f:
+    with open(parameters_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -41,11 +40,10 @@ def calculate_analysis(samples, sample_rate, expected_frequency):
     # FFT
     fft_values = np.fft.fft(samples)
 
-    fft_power = (np.abs(fft_values) ** 2)
+    fft_power = np.abs(fft_values) ** 2
 
     frequencies = np.fft.fftfreq(num_samples, d=1.0 / sample_rate)
 
-    
     # Use positive frequencies only
     positive_mask = frequencies >= 0
 
@@ -83,12 +81,11 @@ def calculate_analysis(samples, sample_rate, expected_frequency):
 
     if total_fft_power > 0:
 
-        tone_power_ratio = (expected_power / total_fft_power)
+        tone_power_ratio = expected_power / total_fft_power
 
     else:
 
         tone_power_ratio = 0.0
-
 
     # Convert power ratio to dB
 
@@ -136,11 +133,20 @@ def main():
 
     experiment_dir = os.path.abspath(os.path.join(script_dir))
 
-    IQ_FILE = os.path.join(experiment_dir, "rx.iq",)
+    IQ_FILE = os.path.join(
+        experiment_dir,
+        "rx.iq",
+    )
 
-    PARAM_FILE = os.path.join(experiment_dir, "parameters.json",)
+    PARAM_FILE = os.path.join(
+        experiment_dir,
+        "parameters.json",
+    )
 
-    RESULT_FILE = os.path.join(experiment_dir, "results.json",)
+    RESULT_FILE = os.path.join(
+        experiment_dir,
+        "results.json",
+    )
 
     # Load parameters
 
@@ -167,7 +173,7 @@ def main():
     # Check RX file
     if not os.path.exists(IQ_FILE):
 
-        result["reason"] = ("rx.iq not found")
+        result["reason"] = "rx.iq not found"
 
     else:
 
@@ -179,7 +185,7 @@ def main():
 
         except Exception as error:
 
-            result["reason"] = (f"Failed to read rx.iq: {error}")
+            result["reason"] = f"Failed to read rx.iq: {error}"
 
             samples = None
 
@@ -193,64 +199,63 @@ def main():
 
             if num_samples == 0:
 
-                result["reason"] = ("No samples received")
+                result["reason"] = "No samples received"
 
             else:
 
                 # Basic sample validation
-                if not np.all(np.isfinite(samples.real)) or not np.all(np.isfinite(samples.imag)):
+                if not np.all(np.isfinite(samples.real)) or not np.all(
+                    np.isfinite(samples.imag)
+                ):
 
-                    result["reason"] = ("Invalid IQ samples detected")
+                    result["reason"] = "Invalid IQ samples detected"
 
                 else:
 
                     # Perform signal analysis
 
-                    analysis = calculate_analysis(samples, sample_rate, expected_frequency)
+                    analysis = calculate_analysis(
+                        samples, sample_rate, expected_frequency
+                    )
 
                     result["metrics"].update(analysis)
-
 
                     # Sample count check
 
                     if expected_samples > 0:
 
-                        sample_count_ok = (num_samples >= expected_samples)
+                        sample_count_ok = num_samples >= expected_samples
 
                     else:
 
-                        sample_count_ok = (num_samples > 0)
+                        sample_count_ok = num_samples > 0
 
                     result["metrics"]["sample_count_ok"] = sample_count_ok
 
-
                     # Frequency tolerance
                     tolerance = max(
-                        analysis["frequency_resolution"], sample_rate / 1000.0)
+                        analysis["frequency_resolution"], sample_rate / 1000.0
+                    )
 
-                    frequency_ok = (
-                        analysis["frequency_error"] <= tolerance)
+                    frequency_ok = analysis["frequency_error"] <= tolerance
 
                     result["metrics"]["frequency_tolerance"] = float(tolerance)
 
                     result["metrics"]["frequency_ok"] = frequency_ok
 
-
                     # Signal power check
-                
-                    power_ok = (
-                        analysis["average_power"] > 1e-12)
+
+                    power_ok = analysis["average_power"] > 1e-12
 
                     result["metrics"]["power_ok"] = power_ok
 
-
                     # Final PASS / FAIL
-            
-                    if (sample_count_ok and frequency_ok and power_ok):
 
-                        result["status"] = ("passed")
+                    if sample_count_ok and frequency_ok and power_ok:
 
-                        result["reason"] = ("Expected signal detected successfully")
+                        result["status"] = "passed"
+
+                        result["reason"] = "Expected signal detected successfully"
 
                     else:
 
@@ -268,8 +273,7 @@ def main():
 
                             reasons.append("received signal power too low")
 
-                        result["reason"] = ("; ".join(reasons))
-
+                        result["reason"] = "; ".join(reasons)
 
     # Save results.json
     with open(RESULT_FILE, "w", encoding="utf-8") as f:

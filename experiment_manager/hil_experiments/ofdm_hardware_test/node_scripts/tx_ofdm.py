@@ -25,8 +25,6 @@ import time
 import threading
 
 
-
-
 class tx_ofdm(gr.top_block):
 
     def __init__(self):
@@ -36,20 +34,179 @@ class tx_ofdm(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-        self.occupied_carriers = occupied_carriers = (list(range(-26, -21)) + list(range(-20, -7)) + list(range(-6, 0)) + list(range(1, 7)) + list(range(8, 21)) + list(range(22, 27)),)
+        self.occupied_carriers = occupied_carriers = (
+            list(range(-26, -21))
+            + list(range(-20, -7))
+            + list(range(-6, 0))
+            + list(range(1, 7))
+            + list(range(8, 21))
+            + list(range(22, 27)),
+        )
         self.tx_gain = tx_gain = 0
         self.tx_amplitude = tx_amplitude = 0
-        self.sync_word2 = sync_word2 = [0, 0, 0, 0, 0, 0, -1, -1, -1, -1, 1, 1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 0, 1, -1, 1, 1, 1, -1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, -1, -1, 0, 0, 0, 0, 0]
-        self.sync_word1 = sync_word1 = [0., 0., 0., 0., 0., 0., 0., 1.41421356, 0., -1.41421356, 0., 1.41421356, 0., -1.41421356, 0., -1.41421356, 0., -1.41421356, 0., 1.41421356, 0., -1.41421356, 0., 1.41421356, 0., -1.41421356, 0., -1.41421356, 0., -1.41421356, 0., -1.41421356, 0., 1.41421356, 0., -1.41421356, 0., 1.41421356, 0., 1.41421356, 0., 1.41421356, 0., -1.41421356, 0., 1.41421356, 0., 1.41421356, 0., 1.41421356, 0., -1.41421356, 0., 1.41421356, 0., 1.41421356, 0., 1.41421356, 0., 0., 0., 0., 0., 0.]
+        self.sync_word2 = sync_word2 = [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            -1,
+            -1,
+            1,
+            1,
+            -1,
+            -1,
+            -1,
+            1,
+            -1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            1,
+            -1,
+            -1,
+            1,
+            -1,
+            0,
+            1,
+            -1,
+            1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+            1,
+            1,
+            -1,
+            1,
+            -1,
+            -1,
+            -1,
+            1,
+            -1,
+            1,
+            -1,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
+        self.sync_word1 = sync_word1 = [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            -1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            1.41421356,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]
         self.samp_rate = samp_rate = 50000
         self.rolloff = rolloff = 0
-        self.pilot_symbols = pilot_symbols = ((1, 1, 1, -1,),)
-        self.pilot_carriers = pilot_carriers = ((-21, -7, 7, 21,),)
+        self.pilot_symbols = pilot_symbols = (
+            (
+                1,
+                1,
+                1,
+                -1,
+            ),
+        )
+        self.pilot_carriers = pilot_carriers = (
+            (
+                -21,
+                -7,
+                7,
+                21,
+            ),
+        )
         self.payload_mod = payload_mod = digital.constellation_qpsk()
         self.packet_len = packet_len = 96
         self.message = message = 0
         self.header_mod = header_mod = digital.constellation_bpsk().points()
-        self.header_formatter = header_formatter = digital.packet_header_ofdm( occupied_carriers, n_syms=1, len_tag_key="packet_len", frame_len_tag_key="packet_len", bits_per_header_sym=1, bits_per_payload_sym=2, scramble_header=False)
+        self.header_formatter = header_formatter = digital.packet_header_ofdm(
+            occupied_carriers,
+            n_syms=1,
+            len_tag_key="packet_len",
+            frame_len_tag_key="packet_len",
+            bits_per_header_sym=1,
+            bits_per_payload_sym=2,
+            scramble_header=False,
+        )
         self.fft_len = fft_len = 64
         self.center_freq = center_freq = 0
 
@@ -58,11 +215,11 @@ class tx_ofdm(gr.top_block):
         ##################################################
 
         self.uhd_usrp_sink_0 = uhd.usrp_sink(
-            ",".join(("", '')),
+            ",".join(("", "")),
             uhd.stream_args(
                 cpu_format="fc32",
-                args='',
-                channels=list(range(0,1)),
+                args="",
+                channels=list(range(0, 1)),
             ),
             "",
         )
@@ -73,47 +230,100 @@ class tx_ofdm(gr.top_block):
         self.uhd_usrp_sink_0.set_antenna("TX/RX", 0)
         self.uhd_usrp_sink_0.set_gain(tx_gain, 0)
         self.fft_vxx_0 = fft.fft_vcc(fft_len, False, (), True, 1)
-        self.digital_packet_headergenerator_bb_0 = digital.packet_headergenerator_bb(header_formatter.base(), 'packet_len')
+        self.digital_packet_headergenerator_bb_0 = digital.packet_headergenerator_bb(
+            header_formatter.base(), "packet_len"
+        )
         self.digital_ofdm_cyclic_prefixer_0 = digital.ofdm_cyclic_prefixer(
+            fft_len, fft_len + fft_len // 4, rolloff, "packet_len"
+        )
+        self.digital_ofdm_carrier_allocator_cvc_0 = digital.ofdm_carrier_allocator_cvc(
             fft_len,
-            fft_len + fft_len//4,
-            rolloff,
-            'packet_len')
-        self.digital_ofdm_carrier_allocator_cvc_0 = digital.ofdm_carrier_allocator_cvc( fft_len, occupied_carriers, pilot_carriers, pilot_symbols, (sync_word1, sync_word2), 'packet_len', True)
-        self.digital_crc32_bb_0 = digital.crc32_bb(False, 'packet_len', True)
-        self.digital_chunks_to_symbols_xx_0_0 = digital.chunks_to_symbols_bc(payload_mod.points(), 1)
-        self.digital_chunks_to_symbols_xx_0 = digital.chunks_to_symbols_bc(header_mod, 1)
+            occupied_carriers,
+            pilot_carriers,
+            pilot_symbols,
+            (sync_word1, sync_word2),
+            "packet_len",
+            True,
+        )
+        self.digital_crc32_bb_0 = digital.crc32_bb(False, "packet_len", True)
+        self.digital_chunks_to_symbols_xx_0_0 = digital.chunks_to_symbols_bc(
+            payload_mod.points(), 1
+        )
+        self.digital_chunks_to_symbols_xx_0 = digital.chunks_to_symbols_bc(
+            header_mod, 1
+        )
         self.blocks_vector_source_x_0 = blocks.vector_source_b(message, True, 1, [])
-        self.blocks_tagged_stream_mux_0 = blocks.tagged_stream_mux(gr.sizeof_gr_complex*1, 'packet_len', 0)
-        self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(gr.sizeof_char, 1, packet_len, 'length_tag_key')
-        self.blocks_repack_bits_bb_0 = blocks.repack_bits_bb(8, 2, 'packet_len', False, gr.GR_LSB_FIRST)
+        self.blocks_tagged_stream_mux_0 = blocks.tagged_stream_mux(
+            gr.sizeof_gr_complex * 1, "packet_len", 0
+        )
+        self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(
+            gr.sizeof_char, 1, packet_len, "length_tag_key"
+        )
+        self.blocks_repack_bits_bb_0 = blocks.repack_bits_bb(
+            8, 2, "packet_len", False, gr.GR_LSB_FIRST
+        )
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_cc(tx_amplitude)
-
 
         ##################################################
         # Connections
         ##################################################
         self.connect((self.blocks_multiply_const_vxx_0, 0), (self.uhd_usrp_sink_0, 0))
-        self.connect((self.blocks_repack_bits_bb_0, 0), (self.digital_chunks_to_symbols_xx_0_0, 0))
-        self.connect((self.blocks_stream_to_tagged_stream_0, 0), (self.digital_crc32_bb_0, 0))
-        self.connect((self.blocks_tagged_stream_mux_0, 0), (self.digital_ofdm_carrier_allocator_cvc_0, 0))
-        self.connect((self.blocks_vector_source_x_0, 0), (self.blocks_stream_to_tagged_stream_0, 0))
-        self.connect((self.digital_chunks_to_symbols_xx_0, 0), (self.blocks_tagged_stream_mux_0, 0))
-        self.connect((self.digital_chunks_to_symbols_xx_0_0, 0), (self.blocks_tagged_stream_mux_0, 1))
+        self.connect(
+            (self.blocks_repack_bits_bb_0, 0),
+            (self.digital_chunks_to_symbols_xx_0_0, 0),
+        )
+        self.connect(
+            (self.blocks_stream_to_tagged_stream_0, 0), (self.digital_crc32_bb_0, 0)
+        )
+        self.connect(
+            (self.blocks_tagged_stream_mux_0, 0),
+            (self.digital_ofdm_carrier_allocator_cvc_0, 0),
+        )
+        self.connect(
+            (self.blocks_vector_source_x_0, 0),
+            (self.blocks_stream_to_tagged_stream_0, 0),
+        )
+        self.connect(
+            (self.digital_chunks_to_symbols_xx_0, 0),
+            (self.blocks_tagged_stream_mux_0, 0),
+        )
+        self.connect(
+            (self.digital_chunks_to_symbols_xx_0_0, 0),
+            (self.blocks_tagged_stream_mux_0, 1),
+        )
         self.connect((self.digital_crc32_bb_0, 0), (self.blocks_repack_bits_bb_0, 0))
-        self.connect((self.digital_crc32_bb_0, 0), (self.digital_packet_headergenerator_bb_0, 0))
-        self.connect((self.digital_ofdm_carrier_allocator_cvc_0, 0), (self.fft_vxx_0, 0))
-        self.connect((self.digital_ofdm_cyclic_prefixer_0, 0), (self.blocks_multiply_const_vxx_0, 0))
-        self.connect((self.digital_packet_headergenerator_bb_0, 0), (self.digital_chunks_to_symbols_xx_0, 0))
+        self.connect(
+            (self.digital_crc32_bb_0, 0), (self.digital_packet_headergenerator_bb_0, 0)
+        )
+        self.connect(
+            (self.digital_ofdm_carrier_allocator_cvc_0, 0), (self.fft_vxx_0, 0)
+        )
+        self.connect(
+            (self.digital_ofdm_cyclic_prefixer_0, 0),
+            (self.blocks_multiply_const_vxx_0, 0),
+        )
+        self.connect(
+            (self.digital_packet_headergenerator_bb_0, 0),
+            (self.digital_chunks_to_symbols_xx_0, 0),
+        )
         self.connect((self.fft_vxx_0, 0), (self.digital_ofdm_cyclic_prefixer_0, 0))
-
 
     def get_occupied_carriers(self):
         return self.occupied_carriers
 
     def set_occupied_carriers(self, occupied_carriers):
         self.occupied_carriers = occupied_carriers
-        self.set_header_formatter(digital.packet_header_ofdm( self.occupied_carriers, n_syms=1, len_tag_key="packet_len", frame_len_tag_key="packet_len", bits_per_header_sym=1, bits_per_payload_sym=2, scramble_header=False))
+        self.set_header_formatter(
+            digital.packet_header_ofdm(
+                self.occupied_carriers,
+                n_syms=1,
+                len_tag_key="packet_len",
+                frame_len_tag_key="packet_len",
+                bits_per_header_sym=1,
+                bits_per_payload_sym=2,
+                scramble_header=False,
+            )
+        )
 
     def get_tx_gain(self):
         return self.tx_gain
@@ -214,8 +424,6 @@ class tx_ofdm(gr.top_block):
         self.uhd_usrp_sink_0.set_center_freq(self.center_freq, 0)
 
 
-
-
 def main(top_block_cls=tx_ofdm, options=None):
     tb = top_block_cls()
 
@@ -234,5 +442,5 @@ def main(top_block_cls=tx_ofdm, options=None):
     tb.wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

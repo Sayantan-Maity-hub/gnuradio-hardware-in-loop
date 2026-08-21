@@ -21,18 +21,11 @@ import json
 import os
 import sys
 
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-PARAMETER_FILE = os.path.join(
-    SCRIPT_DIR,
-    "parameters.json"
-)
+PARAMETER_FILE = os.path.join(SCRIPT_DIR, "parameters.json")
 
-RESULT_FILE = os.path.join(
-    SCRIPT_DIR,
-    "result.json"
-)
+RESULT_FILE = os.path.join(SCRIPT_DIR, "result.json")
 
 
 def write_result(status, reason, metrics=None):
@@ -40,11 +33,7 @@ def write_result(status, reason, metrics=None):
     Create result.json.
     """
 
-    result = {
-        "status": status,
-        "reason": reason,
-        "metrics": metrics or {}
-    }
+    result = {"status": status, "reason": reason, "metrics": metrics or {}}
 
     try:
         with open(RESULT_FILE, "w", encoding="utf-8") as f:
@@ -53,9 +42,7 @@ def write_result(status, reason, metrics=None):
         print(f"Result written to: {RESULT_FILE}")
 
     except Exception as e:
-        print(
-            f"ANALYSIS_ERROR: unable to write result.json: {e}"
-        )
+        print(f"ANALYSIS_ERROR: unable to write result.json: {e}")
 
 
 def main():
@@ -70,17 +57,9 @@ def main():
 
     except Exception as e:
 
-        print(
-            f"ANALYSIS_ERROR: unable to read parameters.json: {e}"
-        )
+        print(f"ANALYSIS_ERROR: unable to read parameters.json: {e}")
 
-        write_result(
-            "failed",
-            "Unable to read parameters.json",
-            {
-                "error": str(e)
-            }
-        )
+        write_result("failed", "Unable to read parameters.json", {"error": str(e)})
 
         return 2
 
@@ -93,15 +72,9 @@ def main():
 
     except KeyError:
 
-        print(
-            "ANALYSIS_ERROR: 'message' not found in parameters.json"
-        )
+        print("ANALYSIS_ERROR: 'message' not found in parameters.json")
 
-        write_result(
-            "failed",
-            "Missing 'message' in parameters.json",
-            {}
-        )
+        write_result("failed", "Missing 'message' in parameters.json", {})
 
         return 2
 
@@ -120,26 +93,15 @@ def main():
     try:
 
         if not isinstance(message, str):
-            raise ValueError(
-                "'message' must be a string"
-            )
+            raise ValueError("'message' must be a string")
 
         expected = message.encode("utf-8")
 
     except Exception as e:
 
-        print(
-            f"ANALYSIS_ERROR: invalid message '{message}': {e}"
-        )
+        print(f"ANALYSIS_ERROR: invalid message '{message}': {e}")
 
-        write_result(
-            "failed",
-            "Invalid message",
-            {
-                "message": message,
-                "error": str(e)
-            }
-        )
+        write_result("failed", "Invalid message", {"message": message, "error": str(e)})
 
         return 2
 
@@ -147,15 +109,9 @@ def main():
     # 4. Find RX payload file
     # --------------------------------------------------
 
-    rx_payload = params.get(
-        "rx_payload",
-        "rx_payload.bin"
-    )
+    rx_payload = params.get("rx_payload", "rx_payload.bin")
 
-    output_file = os.path.join(
-        SCRIPT_DIR,
-        os.path.basename(rx_payload)
-    )
+    output_file = os.path.join(SCRIPT_DIR, os.path.basename(rx_payload))
 
     # --------------------------------------------------
     # 5. Check RX output
@@ -163,10 +119,7 @@ def main():
 
     if not os.path.exists(output_file):
 
-        print(
-            f"ANALYSIS_ERROR: RX output file not found: "
-            f"{output_file}"
-        )
+        print(f"ANALYSIS_ERROR: RX output file not found: " f"{output_file}")
 
         write_result(
             "failed",
@@ -174,8 +127,8 @@ def main():
             {
                 "expected_message": message,
                 "expected_bytes": expected.hex(),
-                "rx_payload_file": output_file
-            }
+                "rx_payload_file": output_file,
+            },
         )
 
         return 2
@@ -191,17 +144,12 @@ def main():
 
     except Exception as e:
 
-        print(
-            f"ANALYSIS_ERROR: unable to read RX payload: {e}"
-        )
+        print(f"ANALYSIS_ERROR: unable to read RX payload: {e}")
 
         write_result(
             "failed",
             "Unable to read RX payload",
-            {
-                "rx_payload_file": output_file,
-                "error": str(e)
-            }
+            {"rx_payload_file": output_file, "error": str(e)},
         )
 
         return 2
@@ -229,7 +177,7 @@ def main():
         "expected_length": len(expected),
         "received_length": len(received),
         "message_match": message_match,
-        "rx_payload_file": output_file
+        "rx_payload_file": output_file,
     }
 
     # --------------------------------------------------
@@ -238,20 +186,13 @@ def main():
 
     if message_match:
 
-        reason = (
-            "Received payload exactly matches "
-            "the transmitted message"
-        )
+        reason = "Received payload exactly matches " "the transmitted message"
 
         print("::STATUS:PASS:")
         print("OFDM RX analysis PASSED")
         print(f"Reason: {reason}")
 
-        write_result(
-            "passed",
-            reason,
-            metrics
-        )
+        write_result("passed", reason, metrics)
 
         return 0
 
@@ -259,10 +200,7 @@ def main():
     # 10. FAIL
     # --------------------------------------------------
 
-    reason = (
-        "Received payload does not match "
-        "the transmitted message"
-    )
+    reason = "Received payload does not match " "the transmitted message"
 
     print("::STATUS:FAIL:")
     print("OFDM RX analysis FAILED")
@@ -271,8 +209,7 @@ def main():
     if len(expected) != len(received):
 
         print(
-            f"Length mismatch: expected {len(expected)}, "
-            f"received {len(received)}"
+            f"Length mismatch: expected {len(expected)}, " f"received {len(received)}"
         )
 
         metrics["length_mismatch"] = True
@@ -281,11 +218,7 @@ def main():
 
         metrics["length_mismatch"] = False
 
-    write_result(
-        "failed",
-        reason,
-        metrics
-    )
+    write_result("failed", reason, metrics)
 
     return 1
 

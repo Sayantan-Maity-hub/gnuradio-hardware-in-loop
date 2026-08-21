@@ -17,9 +17,7 @@ class cortexlab_Remote:
             r"C:\Users\maity\.ssh\id_ed25519"
         )
 
-        self.ssh.set_missing_host_key_policy(
-            paramiko.AutoAddPolicy()
-        )
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         print(hostname)
         print(username)
@@ -38,11 +36,13 @@ class cortexlab_Remote:
 
         return stdout, stderr
 
-    
     # Upload complete folder recursively
-    
 
-    def upload_folder(self, local_path, remote_folder,):
+    def upload_folder(
+        self,
+        local_path,
+        remote_folder,
+    ):
         """
         Upload complete local directory recursively.
 
@@ -72,9 +72,7 @@ class cortexlab_Remote:
         """
 
         if not os.path.isdir(local_path):
-            raise FileNotFoundError(
-                f"Local folder not found: {local_path}"
-            )
+            raise FileNotFoundError(f"Local folder not found: {local_path}")
 
         print(
             f"Uploading folder:\n"
@@ -86,21 +84,13 @@ class cortexlab_Remote:
 
         try:
 
-            
             # Create root remote directory
-            
 
-            self.run(
-                f"mkdir -p {shlex.quote(remote_folder)}"
-            )
+            self.run(f"mkdir -p {shlex.quote(remote_folder)}")
 
-            
             # Walk through complete directory tree
-            
 
-            for root, dirs, files in os.walk(
-                local_path
-            ):
+            for root, dirs, files in os.walk(local_path):
 
                 # Relative path from experiment root
                 relative_dir = os.path.relpath(
@@ -121,17 +111,11 @@ class cortexlab_Remote:
                         ),
                     )
 
-                
                 # Create remote directory
-                
 
-                self.run(
-                    f"mkdir -p {shlex.quote(remote_dir)}"
-                )
+                self.run(f"mkdir -p {shlex.quote(remote_dir)}")
 
-                
                 # Upload every file
-                
 
                 for filename in files:
 
@@ -145,11 +129,7 @@ class cortexlab_Remote:
                         filename,
                     )
 
-                    print(
-                        f"Uploading:"
-                        f"\n  {local_file}"
-                        f"\n  -> {remote_file}"
-                    )
+                    print(f"Uploading:" f"\n  {local_file}" f"\n  -> {remote_file}")
 
                     try:
 
@@ -159,35 +139,22 @@ class cortexlab_Remote:
                         )
 
                         # Convert Windows CRLF to Unix LF
-                        self.run(
-                            "sed -i 's/\\r$//' "
-                            f"{shlex.quote(remote_file)}"
-                        )
+                        self.run("sed -i 's/\\r$//' " f"{shlex.quote(remote_file)}")
 
-                        print(
-                            f"SUCCESS: {filename}"
-                        )
+                        print(f"SUCCESS: {filename}")
 
                     except Exception as error:
 
-                        print(
-                            f"UPLOAD ERROR: "
-                            f"{local_file}"
-                        )
+                        print(f"UPLOAD ERROR: " f"{local_file}")
 
                         raise error
 
-            print(
-                f"\nExperiment folder "
-                f"{local_path} uploaded successfully."
-            )
+            print(f"\nExperiment folder " f"{local_path} uploaded successfully.")
 
         finally:
             sftp.close()
 
-    
     # Download file
-    
 
     def download_file(
         self,
@@ -199,9 +166,7 @@ class cortexlab_Remote:
 
         try:
 
-            local_dir = os.path.dirname(
-                local_file
-            )
+            local_dir = os.path.dirname(local_file)
 
             if local_dir:
                 os.makedirs(
@@ -209,27 +174,19 @@ class cortexlab_Remote:
                     exist_ok=True,
                 )
 
-            print(
-                f"Downloading:"
-                f"\n  {remote_file}"
-                f"\n  -> {local_file}"
-            )
+            print(f"Downloading:" f"\n  {remote_file}" f"\n  -> {local_file}")
 
             sftp.get(
                 remote_file,
                 local_file,
             )
 
-            print(
-                "DOWNLOAD SUCCESS"
-            )
+            print("DOWNLOAD SUCCESS")
 
         finally:
             sftp.close()
 
-    
     # Close SSH connection
-    
 
     def close(self):
 

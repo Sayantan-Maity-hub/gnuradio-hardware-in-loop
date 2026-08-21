@@ -6,7 +6,11 @@ import time
 
 import config
 
-from cortexlab.execution.execution_registy import (get_execution, update_execution, update_execution_node,)
+from cortexlab.execution.execution_registy import (
+    get_execution,
+    update_execution,
+    update_execution_node,
+)
 
 from cortexlab.nodes.node_registry import get_node
 from .execute_analysis import execute_analysis
@@ -21,11 +25,17 @@ RESULT_PREFIX = "::RESULT::"
     Prepare and execute one primary experiment node. Both nodes become READY first and then start
     at approximately the same time.
     """
-def execute_script( experiment_id, node, script, ready_barrier=None, start_at=None,):
-    
-    experiment = get_execution(
-        experiment_id
-    )
+
+
+def execute_script(
+    experiment_id,
+    node,
+    script,
+    ready_barrier=None,
+    start_at=None,
+):
+
+    experiment = get_execution(experiment_id)
 
     if experiment is None:
         return
@@ -70,15 +80,11 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
         # SSH
         ssh = SSHConnection(node)
 
-        remote_dir = (
-            f"/cortexlab/homes/"
-            f"{config.USERNAME}/"
-            f"{folder}"
-        )
+        remote_dir = f"/cortexlab/homes/" f"{config.USERNAME}/" f"{folder}"
 
-        remote_script = (f"{remote_dir}/{node}/{script}")
+        remote_script = f"{remote_dir}/{node}/{script}"
 
-        log_path = (f"{remote_dir}/{node}/execution_{experiment_id}.log")
+        log_path = f"{remote_dir}/{node}/execution_{experiment_id}.log"
 
         update_execution_node(
             experiment_id,
@@ -88,19 +94,14 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
 
         # Check script
         stdout, _ = ssh.run_on_node(
-            f'test -f '
-            f'{shlex.quote(remote_script)} '
-            f'&& echo OK'
+            f"test -f " f"{shlex.quote(remote_script)} " f"&& echo OK"
         )
 
         if stdout.read().decode().strip() != "OK":
 
             _fail_execution(
                 experiment_id,
-                (
-                    f"Script not found for {node}: "
-                    f"{remote_script}"
-                ),
+                (f"Script not found for {node}: " f"{remote_script}"),
                 ready_barrier,
                 node,
             )
@@ -108,10 +109,11 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
             return
 
         # chmod
-        chmod_stdout, chmod_stderr = (
-            ssh.run_on_node(f"chmod +x {shlex.quote(remote_script)}"))
+        chmod_stdout, chmod_stderr = ssh.run_on_node(
+            f"chmod +x {shlex.quote(remote_script)}"
+        )
 
-        chmod_exit = (chmod_stdout.channel.recv_exit_status())
+        chmod_exit = chmod_stdout.channel.recv_exit_status()
 
         if chmod_exit != 0:
 
@@ -145,7 +147,12 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
 
             except threading.BrokenBarrierError:
 
-                _fail_execution(experiment_id, ("Synchronization failed: a node did not become READY within 60 seconds"))
+                _fail_execution(
+                    experiment_id,
+                    (
+                        "Synchronization failed: a node did not become READY within 60 seconds"
+                    ),
+                )
                 return
 
         # COMMON START TIME
@@ -182,8 +189,7 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
 
         output = stdout.read().decode()
 
-        exit_code = (stdout.channel.recv_exit_status())
-
+        exit_code = stdout.channel.recv_exit_status()
 
         # Determine result
         if exit_code == 0:
@@ -204,7 +210,7 @@ def execute_script( experiment_id, node, script, ready_barrier=None, start_at=No
             stdout=output,
             stderr=error,
             exit_code=exit_code,
-            ended=time.strftime("%Y-%m-%d %H:%M:%S")
+            ended=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
         print(f"{experiment_id}: {node} -> {result}")

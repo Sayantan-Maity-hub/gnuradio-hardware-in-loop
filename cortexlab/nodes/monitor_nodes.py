@@ -2,15 +2,18 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from .node_registry import update_node
-from ..reservation.reservation_registry import get_all_reservation, get_reservation, update_reservation
+from ..reservation.reservation_registry import (
+    get_all_reservation,
+    get_reservation,
+    update_reservation,
+)
 from ..remote_connections.ssh_connection import SSHConnection
 
 
 def monitor_single_node(node, connections):
 
-
     if node not in connections:
-        
+
         try:
             ssh = SSHConnection(node)
 
@@ -18,7 +21,6 @@ def monitor_single_node(node, connections):
         except Exception as e:
 
             update_node(node, {"status": "OFFLINE", "error": str(e)})
-
 
             reservations = get_all_reservation()
 
@@ -29,13 +31,12 @@ def monitor_single_node(node, connections):
 
                     update_reservation(job_id, node_status=node_status)
 
-            connections.pop(node, None)    
+            connections.pop(node, None)
 
     try:
-        
+
         ssh = connections[node]
         info = ssh.get_node_info()
-        
 
         # Update node status in the node registry
         update_node(node, info)
@@ -47,10 +48,7 @@ def monitor_single_node(node, connections):
                 node_status = reservation.setdefault("node_status", {})
                 node_status[node] = info.get("status", "OFFLINE")
 
-                update_reservation(
-                    job_id,
-                    node_status=node_status
-                )
+                update_reservation(job_id, node_status=node_status)
     except Exception as e:
 
         update_node(node, {"status": "OFFLINE", "error": str(e)})
@@ -67,7 +65,6 @@ def monitor_nodes(job_id):
 
     reservation = get_reservation(job_id)
     nodes = reservation["assigned_nodes"]
-
 
     print(f"monitor nodes: {nodes}")
     connections = {}

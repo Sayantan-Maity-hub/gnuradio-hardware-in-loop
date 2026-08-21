@@ -5,7 +5,9 @@ reservation_registry = {}
 lock = threading.Lock()
 
 
-def create_reservation(job_id, username, walltime, reservation_name, reservation_time=None):
+def create_reservation(
+    job_id, username, walltime, reservation_name, reservation_time=None
+):
 
     with lock:
         reservation_registry[job_id] = {
