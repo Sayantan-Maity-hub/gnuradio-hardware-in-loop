@@ -1,7 +1,7 @@
 import threading
 import time
 
-from  cortexlab.execution.execution_monitor import execute_script
+from  cortexlab.execution.execute_node_script import execute_script
 from cortexlab.execution.execution_registy import update_execution, get_execution
 
 

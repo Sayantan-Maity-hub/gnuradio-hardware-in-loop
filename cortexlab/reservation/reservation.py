@@ -54,7 +54,9 @@ def reserve_nodes(hostname, username, walltime, reservation_name):
     print(f"\nSubmitting OAR job with command:\n{cmd}")
 
     # Submit the job and capture the output
-    submit_output = remote.run(cmd)
+    stdout, stderr = remote.run(cmd)
+
+    submit_output = stdout.read().decode()
 
     job_match = re.search(r"OAR_JOB_ID=(\d+)", submit_output)
 

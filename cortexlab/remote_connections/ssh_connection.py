@@ -13,7 +13,7 @@ class SSHConnection:
 
         self.gateway = paramiko.SSHClient()
         self.gateway.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        print("connecting to gateway....")
+        
 
         key_file = os.getenv("HIL_PRIVATE_KEY")
         connect_args = {
@@ -25,31 +25,29 @@ class SSHConnection:
         }
 
         if key_file:
-            print(f"Using SSH key from: {key_file}")
+
             connect_args["pkey"] = paramiko.PKey.from_private_key_file(key_file)
             connect_args["look_for_keys"] = False
         else:
             print("Using default SSH keys")
             connect_args["look_for_keys"] = True
 
-        print(connect_args)
 
         self.gateway.connect(**connect_args)
-        print("gatway connected...")
 
         transport = self.gateway.get_transport()
-        print("Authenticated to gateway:", transport.is_authenticated())
+        
         self.channel = None
 
         for i in range(5):
             try:
-                print(f"[{i+1}/5] Opening channel..")
+            
                 self.channel = transport.open_channel(
                     kind="direct-tcpip",
                     dest_addr=(self.node_host, 2222),
                     src_addr=("127.0.0.1", 0),
                 )
-                print("channel opened")
+                
                 break
             except Exception as e:
                 print("Open channel failed: ", repr(e))
@@ -60,7 +58,7 @@ class SSHConnection:
         self.node.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         try:
-            print("Connecting to node...")
+            
             node_transport = paramiko.Transport(self.channel)
             node_transport.start_client()
 
@@ -70,7 +68,7 @@ class SSHConnection:
                     "None authentication was rejected by the node"
                 )
             self.node._transport = node_transport
-            print("Node Connected")
+            
         except Exception as e:
             print("Node connection failed")
             print(type(e).__name__)

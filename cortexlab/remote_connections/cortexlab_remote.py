@@ -33,27 +33,16 @@ class cortexlab_Remote:
     # Run remote command
 
     def run(self, command):
-        stdin, stdout, stderr = self.ssh.exec_command(
-            command
-        )
 
-        output = stdout.read().decode()
-        error = stderr.read().decode()
+        stdin, stdout, stderr = self.ssh.exec_command(command)
 
-        if error:
-            print(error)
+        return stdout, stderr
 
-        return output
-
-    # --------------------------------------------------
+    
     # Upload complete folder recursively
-    # --------------------------------------------------
+    
 
-    def upload_folder(
-        self,
-        local_path,
-        remote_folder,
-    ):
+    def upload_folder(self, local_path, remote_folder,):
         """
         Upload complete local directory recursively.
 
@@ -97,17 +86,17 @@ class cortexlab_Remote:
 
         try:
 
-            # --------------------------------------------------
+            
             # Create root remote directory
-            # --------------------------------------------------
+            
 
             self.run(
                 f"mkdir -p {shlex.quote(remote_folder)}"
             )
 
-            # --------------------------------------------------
+            
             # Walk through complete directory tree
-            # --------------------------------------------------
+            
 
             for root, dirs, files in os.walk(
                 local_path
@@ -132,17 +121,17 @@ class cortexlab_Remote:
                         ),
                     )
 
-                # --------------------------------------------------
+                
                 # Create remote directory
-                # --------------------------------------------------
+                
 
                 self.run(
                     f"mkdir -p {shlex.quote(remote_dir)}"
                 )
 
-                # --------------------------------------------------
+                
                 # Upload every file
-                # --------------------------------------------------
+                
 
                 for filename in files:
 
@@ -196,9 +185,9 @@ class cortexlab_Remote:
         finally:
             sftp.close()
 
-    # --------------------------------------------------
+    
     # Download file
-    # --------------------------------------------------
+    
 
     def download_file(
         self,
@@ -238,9 +227,9 @@ class cortexlab_Remote:
         finally:
             sftp.close()
 
-    # --------------------------------------------------
+    
     # Close SSH connection
-    # --------------------------------------------------
+    
 
     def close(self):
 

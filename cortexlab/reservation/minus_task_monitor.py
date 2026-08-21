@@ -48,7 +48,8 @@ def minus_task_monitor(job_id, task_id):
             if remote is None:
                 remote = cortexlab_Remote()
 
-            output = remote.run(f"minus task info {task_id}")
+            stdout, stderr = remote.run(f"minus task info {task_id}")
+            output = stdout.read().decode()
             print(output)
             
             if "state=RUNNING" in output:
@@ -92,6 +93,7 @@ def minus_task_monitor(job_id, task_id):
                 update_task(job_id, task_id, state=state)
 
         except Exception as e:
+            
             if remote:
                 try:
                     remote.close()

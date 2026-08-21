@@ -7,15 +7,16 @@ from ..remote_connections.ssh_connection import SSHConnection
 
 
 def monitor_single_node(node, connections):
-    print(f"Checking {node}")
+
+
     if node not in connections:
-        print(f"Creating SSH for {node}")
+        
         try:
             ssh = SSHConnection(node)
-            print(f"Creating SSH for {node}")
+
             connections[node] = ssh
         except Exception as e:
-            print(f"SSH failed {node}: {e}")
+
             update_node(node, {"status": "OFFLINE", "error": str(e)})
 
 
@@ -31,10 +32,10 @@ def monitor_single_node(node, connections):
             connections.pop(node, None)    
 
     try:
-        print(f"Getting info {node}")
+        
         ssh = connections[node]
         info = ssh.get_node_info()
-        print(f"Info received {node}")
+        
 
         # Update node status in the node registry
         update_node(node, info)
@@ -51,7 +52,7 @@ def monitor_single_node(node, connections):
                     node_status=node_status
                 )
     except Exception as e:
-        print(f"Error {node}: {e}")
+
         update_node(node, {"status": "OFFLINE", "error": str(e)})
 
         try:

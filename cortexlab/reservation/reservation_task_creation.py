@@ -47,8 +47,11 @@ def minus_create_task(remote_folder, job_id):
             
             remote = cortexlab_Remote()
             try:
-                 output = remote.run(f"minus task create -f '{remote_folder}'")
+                 stdout, stderr = remote.run(f"minus task create -f '{remote_folder}'")
+                 output = stdout.read().decode()
+                 
                  print(output)
+
                  return
             finally:
                  remote.close()
@@ -58,9 +61,14 @@ def minus_submit_task(job_id, remote_folder):
 
         remote = cortexlab_Remote()
         try:
-            output = remote.run(f"minus task submit {remote_folder}.task")
+            stdout, stderr = remote.run(f"minus task submit {remote_folder}.task")
+
+            output = stdout.read().decode()
+
         finally:
+             
              remote.close()
+
         task_id = output.strip()
 
             # Update the task entry

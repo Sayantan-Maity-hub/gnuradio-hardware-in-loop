@@ -42,7 +42,9 @@ def reservation_monitor(job_id):
             if remote is None:
                 remote = cortexlab_Remote()
 
-            job_info = remote.run(f"oarstat -fj {job_id}")
+            stdout, stderr = remote.run(f"oarstat -fj {job_id}")
+
+            job_info = stdout.read().decode()
 
             state_match = re.search(r"state\s*=\s*(\w+)", job_info)
             state = state_match.group(1) if state_match else "UNKNOWN"

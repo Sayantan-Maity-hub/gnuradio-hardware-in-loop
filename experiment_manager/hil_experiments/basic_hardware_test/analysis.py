@@ -79,9 +79,7 @@ def calculate_analysis(samples, sample_rate, expected_frequency):
     expected_power = float(positive_power[expected_index])
 
     # Power ratio
-    total_fft_power = float(
-        np.sum(positive_power)
-    )
+    total_fft_power = float(np.sum(positive_power))
 
     if total_fft_power > 0:
 
@@ -136,7 +134,7 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    experiment_dir = os.path.abspath(os.path.join(script_dir, "..",))
+    experiment_dir = os.path.abspath(os.path.join(script_dir))
 
     IQ_FILE = os.path.join(experiment_dir, "rx.iq",)
 

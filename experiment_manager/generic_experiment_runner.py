@@ -1,9 +1,9 @@
-import os
+import time
 from pathlib import Path
 
 from cortexlab.nodes.node_registry import (is_node_busy, update_node, get_nodes)
 
-from cortexlab.execution.execution_registy import create_experiment_registry
+from cortexlab.execution.execution_registy import create_experiment_registry, get_execution, update_execution
 
 from .create_experiment_folder import (create_experiment_folder)
 
@@ -11,8 +11,11 @@ from .upload_experiment_folder import upload_experiment_folder
 
 from .start_experiment import start_experiment
 
+from cortexlab.execution.execution_monitor import finish_experiment_if_complete
+from cortexlab.execution.execute_analysis import execute_analysis
 
-EXPERIMENTS_ROOT = Path(__file__).resolve().parent.parent
+
+EXPERIMENTS_ROOT = Path(__file__).resolve().parent
 
 
 def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
@@ -28,6 +31,7 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
                     rx.py
                     monitor.py
                 analysis.py
+
 
     Every Python file inside node/ is treated as one independent node script.
 
@@ -152,8 +156,7 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
 
         print("STEP 1: creating experiment folder")
 
-        experiment_folder = (
-            create_experiment_folder(experiment_id=experiment_id, node_files=node_files, root_files=root_files, parameters=parameter,))
+        experiment_folder = (create_experiment_folder(experiment_id=experiment_id, node_files=node_files, root_files=root_files, parameters=parameter,))
 
         print(f"STEP 1: folder created {experiment_folder}")
 
@@ -162,8 +165,7 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
 
         print("STEP 2: uploading experiment")
 
-        remote_folder = (
-            upload_experiment_folder(job_id=job_id, experiment_id=experiment_id, local_folder=experiment_folder,))
+        remote_folder = (upload_experiment_folder(job_id=job_id, experiment_id=experiment_id, local_folder=experiment_folder,))
 
         print(f"STEP 2: upload done {remote_folder}")
 
@@ -176,23 +178,41 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
 
         print(f"STEP 3: experiment started {result}")
 
-        return {
-            "success": True,
-            "experiment_id": experiment_id,
-            "job_id": job_id,
-            "state": "STARTING",
-            "nodes": result.get(
-                "nodes",
-                [],
-            ),
-        }
+        #Check all node in finished state
+        finished_node_execution = finish_experiment_if_complete(experiment_id)
 
-    except Exception:
 
-        # Release nodes if experiment setup fails
+       # Free all node after used
+        experiment = get_execution(experiment_id)
 
-        for node_name in selected_nodes:
 
-            update_node(node_name, busy=False, experiment_id=None)
+        nodes = experiment.get("nodes", {})
 
-        raise
+        for node_name in nodes:
+
+            update_node(node_name, experiment_id=None, busy=False)
+
+            print(f"Released node {node_name} from experiment {experiment_id}")
+
+        #Analysis Results
+        if finished_node_execution:
+            analysis_result = execute_analysis(experiment_id)
+
+        return analysis_result
+
+        
+
+    except Exception as e:
+
+        print(f"Experiment {experiment_id} failed: {e}")
+
+        update_execution(
+            experiment_id,
+            state="FAILED",
+            overall_result="FAILED",
+            stderr=str(e),
+            ended=time.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+
+        return get_execution(experiment_id)
+

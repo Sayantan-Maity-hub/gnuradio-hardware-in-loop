@@ -12,21 +12,23 @@ import config
 from .execution_registy import (get_execution, update_execution)
 
 
-def execute_analysis(experiment_id, analysis_script):
+def execute_analysis(experiment_id):
    
     experiment = get_execution(experiment_id)
+
 
     if experiment is None:
         return
 
     folder = experiment.get("folder")
+    analysis_script = experiment.get("analysis_script")
 
-    if not folder:
+    if not folder and analysis_script:
         update_execution(
             experiment_id,
             state="FAILED",
             overall_result="FAILED",
-            stderr="Experiment remote folder not found",
+            stderr="Experiment remote folder or analysis srcipt not found",
         )
         return
 
@@ -77,10 +79,7 @@ def execute_analysis(experiment_id, analysis_script):
                         os.path.abspath(__file__)
                     )
                 )
-            ),
-            "experiments",
-            "runs",
-            str(experiment_id),
+            ), "experiments", "runs", str(experiment_id),
         )
 
         os.makedirs(local_experiment_dir, exist_ok=True,)
@@ -121,6 +120,8 @@ def execute_analysis(experiment_id, analysis_script):
                     "%Y-%m-%d %H:%M:%S"
                 ),
             )
+
+        return result.get("status")
 
     except Exception as error:
         print(

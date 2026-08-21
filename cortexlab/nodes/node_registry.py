@@ -181,7 +181,7 @@ def wait_for_node_status(job_id, timeout=60):
 
         # Wait until all nodes are ONLINE
 
-        if all(node_status.get(node) == "ONLINE" for node in assigned_nodes):
+        if all(node_status.get(node) is not None for node in assigned_nodes):
 
             return node_status
 

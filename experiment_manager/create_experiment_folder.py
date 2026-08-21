@@ -13,7 +13,7 @@ def create_experiment_folder( experiment_id, node_files, parameters, root_files 
 
     current_file = os.path.abspath(__file__)
 
-    project_root = os.path.abspath(os.path.join(os.path.dirname(current_file), "..", ".."))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(current_file), ".."))
 
     # Experiment base directory
 
