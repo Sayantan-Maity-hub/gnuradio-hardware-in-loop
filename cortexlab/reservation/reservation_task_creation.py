@@ -9,7 +9,7 @@ from cortexlab.reservation.minus_task_monitor import minus_task_monitor
 from cortexlab.reservation.reservation import walltime_to_seconds
 
 
-def generate_scenario(scenario_folder, nodes, duration, task_description):
+def generate_scenario(scenario_folder, nodes, duration, task_description, docker_image):
 
     scenario = {"description": f"{task_description}", "duration": duration, "nodes": {}}
 
@@ -25,7 +25,7 @@ def generate_scenario(scenario_folder, nodes, duration, task_description):
         scenario["nodes"][node_name] = {
             "container": [
                 {
-                    "image": "ghcr.io/cortexlab/cxlb-gnuradio-3.10:1.5",
+                    "image": docker_image,
                     "command": "/usr/sbin/sshd -p 2222 -D",
                 }
             ]
