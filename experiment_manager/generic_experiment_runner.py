@@ -21,7 +21,7 @@ from cortexlab.execution.execute_analysis import execute_analysis
 EXPERIMENTS_ROOT = Path(__file__).resolve().parent
 
 
-def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
+def run_generic_experiment(experiment_name, job_id, pr_id, parameter, source=None):
     """
     Generic experiment runner.
 
@@ -44,7 +44,10 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
 
     # Experiment ID
 
-    experiment_id = f"{pr_id}-{job_id}"
+    source = source or {}
+    commit_sha = source.get("commit_sha", "")
+    revision = commit_sha[:12] if commit_sha else "unknown"
+    experiment_id = f"{pr_id}-{revision}-{job_id}"
 
     # Find experiment directory
 
@@ -149,6 +152,7 @@ def run_generic_experiment(experiment_name, job_id, pr_id, parameter):
         experiment_name=experiment_name,
         nodes=nodes_script,
         analysis_script="analysis.py",
+        source=source,
     )
 
     try:

@@ -45,7 +45,7 @@ def load_parameters():
         )
     )
 
-    print(f"Loading parameters from: {parameters_path}", flush=True)
+    print(f"Loading parameters from: {parameters_path}")
 
     if not os.path.isfile(parameters_path):
         raise FileNotFoundError(
@@ -69,9 +69,6 @@ def load_parameters():
 class rx_ofdm(gr.top_block):
 
     def __init__(self, parameters):
-
-        print("========== RX OFDM STARTED ==========", flush=True)
-
         gr.top_block.__init__(self, "OFDM Rx", catch_exceptions=True)
         self.flowgraph_started = threading.Event()
 
@@ -388,15 +385,11 @@ class rx_ofdm(gr.top_block):
                 channels=list(range(0, 1)),
             ),
         )
-        #modified for check weathe USRP got signal or not
-        self.raw_samples_sink = blocks.file_sink(gr.sizeof_gr_complex, "rx_raw.dat",False)
-
-
         self.uhd_usrp_source_0.set_samp_rate(samp_rate)
         self.uhd_usrp_source_0.set_time_unknown_pps(uhd.time_spec(0))
 
         self.uhd_usrp_source_0.set_center_freq(center_freq, 0)
-        self.uhd_usrp_source_0.set_antenna("TX/RX", 0)
+        self.uhd_usrp_source_0.set_antenna("RX2", 0)
         self.uhd_usrp_source_0.set_gain(rx_gain, 0)
 
         self.fft_vxx_1 = fft.fft_vcc(
@@ -782,11 +775,6 @@ class rx_ofdm(gr.top_block):
                 0,
             ),
         )
-
-        #connect to check usrp got signal or not
-        self.connect(self.uhd_usrp_source_0, self.raw_samples_sink)
-
-
 
     def get_pilot_symbols(self):
         return self.pilot_symbols

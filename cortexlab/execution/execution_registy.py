@@ -11,6 +11,7 @@ def create_experiment_registry(
     nodes,
     analysis_script=None,
     folder=None,
+    source=None,
 ):
     with lock:
 
@@ -36,6 +37,7 @@ def create_experiment_registry(
             "experiment_name": experiment_name,
             "nodes": node_registry,
             "analysis_script": analysis_script,
+            "source": source or {},
             "folder": folder,
             "state": "STARTING",
             "overall_result": None,

@@ -388,10 +388,6 @@ class rx_ofdm(gr.top_block):
                 channels=list(range(0, 1)),
             ),
         )
-        #modified for check weathe USRP got signal or not
-        self.raw_samples_sink = blocks.file_sink(gr.sizeof_gr_complex, "rx_raw.dat",False)
-
-
         self.uhd_usrp_source_0.set_samp_rate(samp_rate)
         self.uhd_usrp_source_0.set_time_unknown_pps(uhd.time_spec(0))
 
@@ -782,11 +778,6 @@ class rx_ofdm(gr.top_block):
                 0,
             ),
         )
-
-        #connect to check usrp got signal or not
-        self.connect(self.uhd_usrp_source_0, self.raw_samples_sink)
-
-
 
     def get_pilot_symbols(self):
         return self.pilot_symbols

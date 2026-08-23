@@ -43,7 +43,7 @@ def load_parameters():
         )
     )
 
-    print(f"Loading parameters from: {parameters_path}", flush=True)
+    print(f"Loading parameters from: {parameters_path}")
 
     if not os.path.isfile(parameters_path):
         raise FileNotFoundError(
@@ -67,9 +67,6 @@ def load_parameters():
 class tx_ofdm(gr.top_block):
 
     def __init__(self, parameters):
-
-        print("========== TX OFDM STARTED ==========", flush=True)
-
         gr.top_block.__init__(self, "OFDM Tx", catch_exceptions=True)
         self.flowgraph_started = threading.Event()
 

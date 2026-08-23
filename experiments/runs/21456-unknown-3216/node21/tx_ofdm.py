@@ -24,77 +24,26 @@ from gnuradio import uhd
 import time
 import threading
 
-# Added for parameterization.
-import json
-import os
-
-
-# Added for parameterization.
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-# Added for parameterization.
-def load_parameters():
-    parameters_path = os.path.abspath(
-        os.path.join(
-            SCRIPT_DIR,
-            "..",
-            "parameters.json",
-        )
-    )
-
-    print(f"Loading parameters from: {parameters_path}", flush=True)
-
-    if not os.path.isfile(parameters_path):
-        raise FileNotFoundError(
-            f"parameters.json not found: {parameters_path}"
-        )
-
-    with open(parameters_path, "r", encoding="utf-8") as file:
-        parameters = json.load(file)
-
-    if not isinstance(parameters, dict):
-        raise ValueError(
-            "parameters.json must contain a JSON object"
-        )
-
-    print("Loaded parameters:")
-    print(json.dumps(parameters, indent=2))
-
-    return parameters
-
 
 class tx_ofdm(gr.top_block):
 
-    def __init__(self, parameters):
-
-        print("========== TX OFDM STARTED ==========", flush=True)
-
+    def __init__(self):
         gr.top_block.__init__(self, "OFDM Tx", catch_exceptions=True)
         self.flowgraph_started = threading.Event()
 
         ##################################################
         # Variables
         ##################################################
-        # Same OFDM parameters as the working built-in OFDM TX.
         self.occupied_carriers = occupied_carriers = (
-            (
-                -26, -25, -24, -23, -22,
-                -20, -19, -18, -17, -16, -15, -14, -13,
-                -12, -11, -10, -9, -8,
-                -6, -5, -4, -3, -2, -1,
-                1, 2, 3, 4, 5, 6,
-                8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                22, 23, 24, 25, 26,
-            ),
+            list(range(-26, -21))
+            + list(range(-20, -7))
+            + list(range(-6, 0))
+            + list(range(1, 7))
+            + list(range(8, 21))
+            + list(range(22, 27)),
         )
-        # Added for parameterization.
-        self.tx_gain = tx_gain = float(
-            parameters.get("tx_gain", parameters.get("gain", 10))
-        )
-        self.tx_amplitude = tx_amplitude = float(
-            parameters.get("tx_amplitude", parameters.get("amplitude", 0.05))
-        )
+        self.tx_gain = tx_gain = 0
+        self.tx_amplitude = tx_amplitude = 0
         self.sync_word2 = sync_word2 = [
             0,
             0,
@@ -227,10 +176,7 @@ class tx_ofdm(gr.top_block):
             0.0,
             0.0,
         ]
-        # Added for parameterization.
-        self.samp_rate = samp_rate = float(
-            parameters["sample_rate"]
-        )
+        self.samp_rate = samp_rate = 50000
         self.rolloff = rolloff = 0
         self.pilot_symbols = pilot_symbols = (
             (
@@ -249,18 +195,8 @@ class tx_ofdm(gr.top_block):
             ),
         )
         self.payload_mod = payload_mod = digital.constellation_qpsk()
-        
-        # Added for parameterization.
-        self.message = message = list(
-            parameters.get(
-                "message",
-                "Hello CortexLab",
-            ).encode("utf-8")
-        )
-
-        # Added for parameterization.
-        self.packet_len = packet_len = len(message)
-
+        self.packet_len = packet_len = 96
+        self.message = message = 0
         self.header_mod = header_mod = digital.constellation_bpsk().points()
         self.header_formatter = header_formatter = digital.packet_header_ofdm(
             occupied_carriers,
@@ -272,26 +208,7 @@ class tx_ofdm(gr.top_block):
             scramble_header=False,
         )
         self.fft_len = fft_len = 64
-        # Added for parameterization.
-        self.center_freq = center_freq = float(
-            parameters["center_frequency"]
-        )
-
-        # Added for parameterization.
-        print("\nTX configuration:")
-        print(f"  Sample rate     : {self.samp_rate}")
-        print(f"  Center frequency: {self.center_freq}")
-        print(f"  Gain            : {self.tx_gain}")
-        print(f"  Amplitude       : {self.tx_amplitude}")
-        print(
-            f"  Message         : {parameters.get('message', 'Hello CortexLab')}"
-        )
-        print(f"  Payload hex     : {bytes(message).hex()}")
-        print(f"  Payload length  : {self.packet_len}")
-        print(f"  FFT length      : {self.fft_len}")
-        print(
-            f"  CP length       : {self.fft_len // 4}"
-        )
+        self.center_freq = center_freq = 0
 
         ##################################################
         # Blocks
@@ -340,7 +257,7 @@ class tx_ofdm(gr.top_block):
             gr.sizeof_gr_complex * 1, "packet_len", 0
         )
         self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(
-            gr.sizeof_char, 1, packet_len, "packet_len"
+            gr.sizeof_char, 1, packet_len, "length_tag_key"
         )
         self.blocks_repack_bits_bb_0 = blocks.repack_bits_bb(
             8, 2, "packet_len", False, gr.GR_LSB_FIRST
@@ -508,16 +425,7 @@ class tx_ofdm(gr.top_block):
 
 
 def main(top_block_cls=tx_ofdm, options=None):
-    # Added for parameterization.
-    try:
-        parameters = load_parameters()
-        tb = top_block_cls(parameters)
-    except Exception as error:
-        print(
-            f"Failed to initialize TX flowgraph: {error}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    tb = top_block_cls()
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

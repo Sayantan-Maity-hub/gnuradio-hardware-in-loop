@@ -2,6 +2,7 @@ import yaml
 import time
 import os
 import re
+import config
 from ..remote_connections.cortexlab_remote import cortexlab_Remote
 from .reservation_registry import update_reservation, get_reservation
 import threading
@@ -9,9 +10,10 @@ from cortexlab.reservation.minus_task_monitor import minus_task_monitor
 from cortexlab.reservation.reservation import walltime_to_seconds
 
 
-def generate_scenario(scenario_folder, nodes, duration, task_description, docker_image):
+def generate_scenario(scenario_folder, nodes, duration, task_description):
 
     scenario = {"description": f"{task_description}", "duration": duration, "nodes": {}}
+    docker_image = config.DEFAULT_BASE_IMAGE
 
     scenario_nodes = []
     for host in nodes:

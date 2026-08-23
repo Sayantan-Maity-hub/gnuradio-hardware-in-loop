@@ -43,7 +43,7 @@ def load_parameters():
         )
     )
 
-    print(f"Loading parameters from: {parameters_path}", flush=True)
+    print(f"Loading parameters from: {parameters_path}")
 
     if not os.path.isfile(parameters_path):
         raise FileNotFoundError(
@@ -67,9 +67,6 @@ def load_parameters():
 class tx_ofdm(gr.top_block):
 
     def __init__(self, parameters):
-
-        print("========== TX OFDM STARTED ==========", flush=True)
-
         gr.top_block.__init__(self, "OFDM Tx", catch_exceptions=True)
         self.flowgraph_started = threading.Event()
 
@@ -249,7 +246,8 @@ class tx_ofdm(gr.top_block):
             ),
         )
         self.payload_mod = payload_mod = digital.constellation_qpsk()
-        
+        # Added for parameterization.
+        self.packet_len = packet_len = len(message)
         # Added for parameterization.
         self.message = message = list(
             parameters.get(
@@ -257,10 +255,6 @@ class tx_ofdm(gr.top_block):
                 "Hello CortexLab",
             ).encode("utf-8")
         )
-
-        # Added for parameterization.
-        self.packet_len = packet_len = len(message)
-
         self.header_mod = header_mod = digital.constellation_bpsk().points()
         self.header_formatter = header_formatter = digital.packet_header_ofdm(
             occupied_carriers,
@@ -340,7 +334,7 @@ class tx_ofdm(gr.top_block):
             gr.sizeof_gr_complex * 1, "packet_len", 0
         )
         self.blocks_stream_to_tagged_stream_0 = blocks.stream_to_tagged_stream(
-            gr.sizeof_char, 1, packet_len, "packet_len"
+            gr.sizeof_char, 1, packet_len, "length_tag_key"
         )
         self.blocks_repack_bits_bb_0 = blocks.repack_bits_bb(
             8, 2, "packet_len", False, gr.GR_LSB_FIRST

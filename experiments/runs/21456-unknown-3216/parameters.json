@@ -1,0 +1,9 @@
+{
+    "message": "Hello CortexLab",
+    "tx_gain": 10,
+    "tx_amplitude": 0.05,
+    "sample_rate": 195312,
+    "rx_gain": 20,
+    "center_frequency": 915000000,
+    "rx_output_file": "rx_payload.bin"
+}

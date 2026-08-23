@@ -335,7 +335,7 @@ class tx_ofdm(gr.top_block):
         self.digital_chunks_to_symbols_xx_0 = digital.chunks_to_symbols_bc(
             header_mod, 1
         )
-        self.blocks_vector_source_x_0 = blocks.vector_source_b(message, True, 1, [])
+        self.blocks_vector_source_x_0 = blocks.vector_source_b(message, False, 1, [])
         self.blocks_tagged_stream_mux_0 = blocks.tagged_stream_mux(
             gr.sizeof_gr_complex * 1, "packet_len", 0
         )
@@ -383,6 +383,7 @@ class tx_ofdm(gr.top_block):
         )
         self.connect(
             (self.digital_ofdm_cyclic_prefixer_0, 0),
+
             (self.blocks_multiply_const_vxx_0, 0),
         )
         self.connect(

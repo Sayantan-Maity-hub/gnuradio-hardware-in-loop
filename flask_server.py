@@ -41,6 +41,7 @@ def create_experiment():
     try:
         pr_id = data["pr_id"]
         experiment_name = data["experiment"]
+        source = data.get("source", {})
 
         # Check if an active reservation already exists
         reservation = None
@@ -125,6 +126,7 @@ def create_experiment():
             job_id=job_id,
             pr_id=pr_id,
             parameter=parameter,
+            source=source,
         )
 
         return (
