@@ -1,10 +1,8 @@
 USERNAME = None
 HOSTNAME = None
-CORTEXLAB_VALID_NODES = [
-    
-    14,
-    15
-]
+
+#check in cortexlab for valid working node.
+CORTEXLAB_VALID_NODES = [4, 6, 12, 14, 15, 16, 17, 18, 20, 21, 24, 25, 26, 27, 28, 29, 34, 37, 38]
 
 TOOLCHAIN_ENV = "/cortexlab/toolchains/current/bin/cxlb-toolchain-user-conf"
 
