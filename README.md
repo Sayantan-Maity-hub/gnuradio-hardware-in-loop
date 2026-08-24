@@ -93,7 +93,7 @@ Configure the values in `config.py` before sending a request:
 ```python
 USERNAME = "your_cortexlab_username"
 HOSTNAME = "gw.cortexlab.fr"
-CORTEXLAB_VALID_NODES = [14, 15]
+CORTEXLAB_VALID_NODES = [4, 6, 12, 14, 15, 16, 17, 18, 20, 21, 24, 25, 26, 27, 28, 29, 34, 37, 38]
 ```
 
 Alternatively, `username` and `hostname` can be provided in a `POST /run-experiment` request; the controller stores them for the current process. Do not commit personal usernames, private keys, passwords, or registry credentials.
