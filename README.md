@@ -213,8 +213,6 @@ The intended CI direction is to validate a GNU Radio revision or pull request ag
 4. Collect the HIL result and publish it back to the CI system or pull request.
 
 The repository currently provides partial building blocks:
-
-- `ci_workflow/build_gnuradio_image.py` can build, verify, and optionally push an image from a GNU Radio commit SHA.
 - `ci_workflow/docker_image/Dockerfile.pr` can build a CortexLab toolchain image from `GNURADIO_REF`.
 - `ci_workflow/example_experiment_request/` contains manual request examples.
 
